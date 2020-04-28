@@ -1,0 +1,167 @@
+<?php
+
+function cvl_visualization_init(){
+}
+
+/**
+ * Implements hook_permission().
+ */
+function cvl_visualization_permission() {
+  return array(
+    'administer cvl data visualization' => array(
+      'title' => t('Administer CVL data visualization'),
+    ),
+  );
+}
+
+
+function cvl_visualization_block_info() {
+  $blocks = array();
+  $blocks['cvl_visualization_block'] = array(
+    'info' => t('CVL Data Visualization Module'),
+  );
+  return $blocks;
+}
+
+//function cvl_visualization_menu() {
+//  $items['admin/config/services/cvl_visualization'] = array(
+//    'title' => 'CVL Data Visualization Module configuration',
+//    'description' => 'Configuration for the CVL Data Visualization module',
+//    'page callback' => 'cvl_visualization_admin_overview',
+//    'access arguments' => array('administer cvl data visualization'),
+//    'weight' => -5,
+//    'file' => 'cvl_visualization.admin.inc',
+//  );
+//  $items['admin/config/services/cvl_visualization/edit/%cvl_visualization'] = array(
+//    'title' => 'Edit alias',
+//    'page callback' => 'cvl_visualization_admin_edit',
+//    'page arguments' => array(5),
+//    'access arguments' => array('administer cvl data visualization'),
+//    'file' => 'cvl_visualization.admin.inc',
+//  );
+//  $items['admin/config/services/cvl_visualization/delete/%cvl_visualization'] = array(
+//    'title' => 'Delete alias',
+//    'page callback' => 'drupal_get_form',
+//    'page arguments' => array('cvl_visualization_admin_delete_confirm', 5),
+//    'access arguments' => array('administer cvl data visualization'),
+//    'file' => 'cvl_visualization.admin.inc',
+//  );
+//  $items['admin/config/services/cvl_visualization/list'] = array(
+//    'title' => 'List',
+//    'type' => MENU_DEFAULT_LOCAL_TASK,
+//    'weight' => -10,
+//  );
+//  $items['admin/config/services/cvl_visualization/add'] = array(
+//    'title' => 'Add alias',
+//    'page callback' => 'cvl_visualization_admin_edit',
+//    'access arguments' => array('administer cvl data visualization'),
+//    'type' => MENU_LOCAL_ACTION,
+//    'file' => 'cvl_visualization.admin.inc',
+//  );
+//
+//  return $items;
+//}
+
+function cvl_visualization_block_view($delta='') {
+  $block = array();
+  switch ($delta) {
+    case 'cvl_visualization_block':
+     $block['content'] = cvl_visualization_main_content(); // set the content of the block to our cvl_visualization_main_content
+     break;
+  }
+  return $block;
+}
+
+
+function cvl_visualization_main_content(){
+  global $base_url;
+  global $metsis_conf;
+  
+  $mpath = drupal_get_path('module', 'cvl_visualization');
+
+  $ol5_path = libraries_get_path('openlayers5');
+  $jq_path = drupal_get_path('module', 'jquery_update');
+
+  drupal_add_css($mpath . '/css/cvl_visualization_style.css');
+  drupal_add_css($ol5_path . '/css/ol.css');
+
+  drupal_add_js($ol5_path . '/build/ol.js');
+  drupal_add_js('https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.3.15/proj4.js', 'external');
+
+
+  $datasets = array(
+  array("id" => "90e1c0ba-9dc7-5ffe-9578-28b73967602d",
+        "core" => "ADC"),
+  array("id" => "S2A_MSIL1C_20200428T101031_N0209_R022_T36WVD_20200428T105027",
+        "core" => "NBS"),
+  array("id" => "S1A_IW_GRDH_1SDV_20200428T044754_20200428T044819_032323_03BD91_2CF2",
+        "core" => "NBS")
+  );
+
+  foreach ($datasets as $key => $value) {
+    if ($value['core'] == 'ADC') {
+      $adc_list[] = $value['id'];  
+    }
+    elseif ($value['core'] == 'NBS') {
+      $nbs_list[] = $value['id'];  
+    }
+  }
+  //drupal_set_message(print_r($nbs_list,TRUE),'warning');
+  //drupal_set_message(print_r($adc_list,TRUE),'warning');
+
+  $data_info = [];
+  $queryQ1_res = [];
+
+  // Define queries and extract data info
+
+  $fields = "id, mmd_data_access_resource, mmd_temporal_extent_start_date, mmd_temporal_extent_end_date, mmd_geographic_extent_rectangle_north, mmd_geographic_extent_rectangle_south, mmd_geographic_extent_rectangle_east, mmd_geographic_extent_rectangle_west, mmd_data_access_wms_layers_wms_layer";
+  $queryQ1_prd = "";
+  foreach ($nbs_list as $value) { 
+    $queryQ1_prd .= ' AND ';
+    $queryQ1_prd .= 'full_text:' . $value ;
+  }
+  foreach ($adc_list as $value) { 
+    $queryQ1_prd .= ' AND ';
+    $queryQ1_prd .= 'full_text:' . $value ;
+  }
+  drupal_set_message(print_r($queryQ1_prd,TRUE),'warning');
+
+    // Define connection to SolR and results of the query
+    $con1 = new HttpConnection(SOLR_SERVER_IP, SOLR_SERVER_PORT);
+    $resQ1 = $con1->get('/solr/' . $dataset[1] . '/select', array("q" =>$queryQ1_prd, "start" => 0, "rows" => 1000, "wt" => "json", "fl" => $fields,));
+    $queryQ1_res = json_decode($resQ1['body'], true);
+    //drupal_set_message(print_r($resQ1,TRUE),'warning');
+  $count = 0; 
+  foreach ($queryQ1_res['response']['docs'] as $doc) {
+     $id = $doc['id'];
+     $address = $doc['mmd_data_access_resource'][1];
+     $address = json_decode("{".$address."}",true)['OGC WMS'];
+     $start = $doc['mmd_temporal_extent_start_date'];
+     $end = $doc['mmd_temporal_extent_end_date'];
+     $north = $doc['mmd_geographic_extent_rectangle_north'];
+     $south = $doc['mmd_geographic_extent_rectangle_south'];
+     $east = $doc['mmd_geographic_extent_rectangle_east'];
+     $west = $doc['mmd_geographic_extent_rectangle_west'];
+     $layers = $doc['mmd_data_access_wms_layers_wms_layer'];
+     $latlon = array(($south+$north)/2, ($east+$west)/2);
+     $data_info[$count] = array($address, $id, $layers, array($north,$south,$east,$west), array($start, $end));
+     $count = $count + 1; 
+  }
+
+  drupal_json_encode($data_info);
+  drupal_add_js(array('prinfoQ1' => $data_info
+                      ), 'setting');
+  
+
+return '
+
+<body>
+  </script>
+  <div id="cvl-map" class="cvl-map">
+     <div id="tooltip" style="background-color: rgba(0,0,0,0.2); font-size: small; width:100%;"></div>
+     <script type="text/javascript" src="/'.$mpath.'/js/cvl_visualization.js"></script>
+  </div>
+</body>
+';
+}
+?>
