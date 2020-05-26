@@ -3,4 +3,5 @@ description = "Display selected products on a OL5 client"
 core = 7.x
 
 dependencies[] = libraries
+dependencies[] = jquery_update
 files[] = cvl_visualization.admin.inc

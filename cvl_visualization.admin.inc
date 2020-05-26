@@ -34,9 +34,9 @@ function cvl_visualization_admin() {
 
   $form['ts_ip'] = array(
     '#type' => 'textfield',
-    '#title' => t('Enter TS service IP'),
+    '#title' => t('Enter TS service IP and PORT'),
     '#default_value' => variable_get('ts_ip', ''),
-    '#description' => t("Port of SolR server to be queried"),
+    '#description' => t("IP:PORT of the time series service"),
   );
 
   return system_settings_form($form);

@@ -30,7 +30,8 @@ var extracted_info = Drupal.settings.extracted_info;
 var path = Drupal.settings.path;
 var ts_ip = Drupal.settings.ts_ip;
 var pins = Drupal.settings.pins;
-console.log(extracted_info);
+var site_name = Drupal.settings.site_name;
+//console.log(extracted_info);
 
 
 //document.getElementsByClassName("datasets")[0].style.display = 'none';
@@ -58,12 +59,22 @@ for (var i = ch.length; i--;) {
 }
 
 //in nbs s1-ew
-var iconStyleB = new ol.style.Style({
+var iconStyleBl = new ol.style.Style({
     fill: new ol.style.Fill({
       color: 'rgba(0,0,255,0.1)',
     }),
     stroke: new ol.style.Stroke({
       color: 'blue',
+      width: 2
+    }),
+});
+
+var iconStyleGr = new ol.style.Style({
+    fill: new ol.style.Fill({
+      color: 'rgba(186, 168, 168,0.1)',
+    }),
+    stroke: new ol.style.Stroke({
+      color: 'gray',
       width: 2
     }),
 });
@@ -97,7 +108,18 @@ var iconStyleP1 = new ol.style.Style({
       anchorXUnits: 'fraction',
       anchorYUnits: 'fraction',
       opacity: 1.00,
-      src: '/'+path+'/icons/pinR.png'
+      src: '/'+path+'/icons/pinBl.png'
+   }))
+});
+
+var iconStylePGr = new ol.style.Style({
+    image: new ol.style.Icon(({
+      anchor: [0.5, 0.0],
+      anchorOrigin: 'bottom-left',
+      anchorXUnits: 'fraction',
+      anchorYUnits: 'fraction',
+      opacity: 1.00,
+      src: '/'+path+'/icons/pinGr.png'
    }))
 });
 
@@ -108,7 +130,7 @@ var iconStyleP2 = new ol.style.Style({
       anchorXUnits: 'fraction',
       anchorYUnits: 'fraction',
       opacity: 1.00,
-      src: '/'+path+'/icons/pin.png'
+      src: '/'+path+'/icons/pinBk.png'
    }))
 });
 
@@ -119,7 +141,6 @@ var layer = {};
 layer['base']  = new ol.layer.Tile({
    type: 'base',
    title: 'base',
-   displayInLayerSwitcher: false,
    source: new ol.source.TileWMS({ 
        url: 'http://public-wms.met.no/backgroundmaps/northpole.map',
        params: {'LAYERS': 'world', 'TRANSPARENT':'false', 'VERSION':'1.1.1','FORMAT':'image/png'},
@@ -140,16 +161,53 @@ var map = new ol.Map({
    })
 });
 
+// title on hover tooltip
+var tlphov = document.createElement("div");
+tlphov.setAttribute("id","tooltip-hov")
+
+var overlayh = new ol.Overlay({
+  element: tlphov,
+});
+map.addOverlay(overlayh);
+
+function id_tooltip_h(){
+  map.on('pointermove', function(evt) {
+    var coordinate = evt.coordinate;
+    var feature_ids = {};
+    map.forEachFeatureAtPixel(evt.pixel, function(feature, layer) {
+      //console.log(feature);
+      feature_ids[feature.get('id')] = {title: feature.get('title')};
+    });
+    if(feature_ids.length !== 0) {
+      tlphov.style.display = 'inline-block';
+      tlphov.innerHTML = '';
+      for(var id in feature_ids){
+        overlayh.setPosition(evt.coordinate);
+        tlphov.innerHTML += feature_ids[id].title+'<br>';
+      }
+    }
+  });
+}
+
+// add popup with thumbnails
+var container = document.getElementById('popup');
+var content = document.getElementById('popup-content');
+
+var overlay = new ol.Overlay({
+  element: container,
+  className: 'thumb-pop'
+});
+map.addOverlay(overlay);
 
 // clickable ID in tooltop
 var tlp = document.createElement("div");
 tlp.setAttribute("id","tooltip")
-tlp.setAttribute("style","margin-top: 1em; margin-bottom: 1em; background-color: rgba(0,0,0,0.2); font-size: small; width:100%;")
 document.getElementById("map-cvl").appendChild(tlp);
-function id_tooltip(){
-var tooltip = document.getElementById('tooltip');
 
-map.on('click', function(evt) {
+function id_tooltip(){
+  var tooltip = document.getElementById('tooltip');
+
+  map.on('click', function(evt) {
 
   var coordinate = evt.coordinate;
   overlay.setPosition([coordinate[0] + coordinate[0]*20/100, coordinate[1] +  coordinate[1]*20/100]);
@@ -170,8 +228,7 @@ map.on('click', function(evt) {
                                         timeStart: feature.get('time')[0],
                                         timeEnd: feature.get('time')[1],
                                         thumb: feature.get('thumb'),
-                                        url_lp: feature.get('related_info')[0],
-                                        url_ug: feature.get('related_info')[1],
+                                        url_lp: feature.get('related_info'),
                                         ds_prod_status: feature.get('info_status')[0],
                                         md_status: feature.get('info_status')[1],
                                         last_md_update: feature.get('info_status')[2],
@@ -185,11 +242,15 @@ map.on('click', function(evt) {
                                         cit_tit: feature.get('citation')[1],
                                         cit_date: feature.get('citation')[2],
                                         cit_place: feature.get('citation')[3],
-                                        has_ts: true,
                                         cit_publisher: feature.get('citation')[4],
-                                        isotopic: feature.get('iso_keys_coll')[0],
-                                        keywords: feature.get('iso_keys_coll')[1],
-                                        collection: feature.get('iso_keys_coll')[2],};
+                                        has_ts: feature.get('has_ts'),
+                                        core: feature.get('core'),
+                                        access_constraint: feature.get('constraints')[0],
+                                        use_constraint: feature.get('constraints')[1],
+                                        isotopic: feature.get('iso_keys_coll_act')[0],
+                                        keywords: feature.get('iso_keys_coll_act')[1],
+                                        collection: feature.get('iso_keys_coll_act')[2],
+                                        activity: feature.get('iso_keys_coll_act')[3],};
   });
   if(feature_ids.length !== 0) {
      tooltip.style.display = 'inline-block';
@@ -198,42 +259,47 @@ map.on('click', function(evt) {
      for(var id in feature_ids){
 
 
+
 var markup = `
-<a target="_blank" href="${feature_ids[id].url_lp}" style="width: 50%; display: inline-block;"><strong>${feature_ids[id].title}</strong></a>
-<button type="button" style="margin-left: 2em;" class="button" data-toggle="collapse" data-target="#md-more-${id}" >Metadata</button> 
-<button type="button" style="margin-left: 2em;" class="button"><a target="_blank" href="${feature_ids[id].url_h}">Direct Download</a></button>
-<button type="button" style="margin-left: 2em; display: ${feature_ids[id].has_ts ? 'unset': 'none'};" class="button" data-toggle="collapse" data-target="#md-ts-${id}" 
+<a target="_blank" href="${feature_ids[id].url_lp}" style="width: 55%; display: inline-block;"><strong>${feature_ids[id].title}</strong></a>
+<button type="button" style="margin-left: 2em;" class="cvl-button" data-toggle="collapse" data-target="#md-more-${id}">Metadata</button> 
+<button type="button" style="margin-left: 2em;" class="cvl-button"><a target="_blank" href="${(feature_ids[id].url_h) !='' ? feature_ids[id].url_h : feature_ids[id].url_lp}">Direct Download</a></button>
+<button type="button" style="margin-left: 2em; display: ${(feature_ids[id].has_ts == 'true') ? 'unset': 'none'};" class="cvl-button" data-toggle="collapse" data-target="#md-ts-${id}" 
 onclick="fetch_ts_variables('${feature_ids[id].url_o}', 'md-ts-${id}');">Interactive Plotting</button>
 
 <div style="height: 0.4em; background-color: white;"></div>
 
 <div id="md-more-${id}" style="background-color:white; overflow-y: hidden; height: 0px" class="collapse">
-<table style="font-size: 14px; border:none;">
+<table class="cvl-table">
   <tr style="border: none;">
-  <td style="width:20%; border: none;"><img src="${feature_ids[id].thumb}"></td>
+  <td style="width:20%; border: none;"><img class="cvl-thumb" src="${feature_ids[id].thumb}"></td>
   <td style="border: none;">
   <strong>Title: </strong>${feature_ids[id].title}<br>
   <strong>Abstract: </strong>${feature_ids[id].abs}<br>
-  <button type="button" class="button" data-toggle="collapse" style="margin-top: 2em;" data-target="#md-full-${id}">Full Metadata</button> 
-  <button type="button" class="button" data-toggle="collapse" style="margin-top: 2em;" data-target="#md-access-${id}">Data Access</button> 
-  <button type="button" class="button" data-toggle="collapse" style="margin-top: 2em;" data-target="#md-cit-${id}">Citation Info</button> 
+  <button data-parent="#cvl-acc" type="button" class="cvl-button" data-toggle="collapse" style="margin-top: 2em;" data-target="#md-full-${id}">Full Metadata</button> 
+  <button data-parent="#cvl-acc" type="button" class="cvl-button" data-toggle="collapse" style="margin-top: 2em;" data-target="#md-access-${id}">Data Access</button> 
   </td></tr>
 </table>
-</div>
 
+<div id="cvl-acc">
+<div class="panel">
 <div id="md-full-${id}" style="background-color:white; overflow-y: hidden; height: 0px" class="collapse">
-<table style="font-size: 14px; border:none;">
+<table class="cvl-table">
   <tr><td colspan="2" style="width:25%;"><strong>Title: </strong></td><td>${feature_ids[id].title}</td></tr>
   <tr><td colspan="2" style="width:25%;"><strong>ID: </strong></td><td>${feature_ids[id].id}</td></tr>
   <tr><td colspan="2" style="width:25%;"><strong>Abstract: </strong></td><td>${feature_ids[id].abs}</td></tr>
-  <tr><td colspan="2" style="width:25%;"><strong>Product ID: </strong></td><td>${feature_ids[id].id}</td></tr>
+  <tr><td colspan="2" style="width:25%;"><strong>Last metadata update: </strong></td><td>${feature_ids[id].last_md_update}</td></tr>
+  <tr><td colspan="2" style="width:25%;"><strong>Metadata ID: </strong></td><td>${feature_ids[id].id}</td></tr>
   <tr><td colspan="2" style="width:25%;"><strong>Landing Page: </strong></td><td><a href="${feature_ids[id].url_lp}">${feature_ids[id].url_lp}</a></td></tr>
-  <tr><td colspan="2" style="width:25%;"><strong>Users Guide: </strong></td><td><a href="${feature_ids[id].url_ug}">${feature_ids[id].url_ug}</a></td></tr>
   <tr><td colspan="2" style="width:25%;"><strong>Time start: </strong></td><td>${feature_ids[id].timeStart}</td></tr>
   <tr><td colspan="2" style="width:25%;"><strong>Time end: </strong></td><td>${feature_ids[id].timeEnd}</td></tr>
+  <tr><td colspan="2" style="width:25%;"><strong>Extent (N,S,E,W): </strong></td><td>${feature_ids[id].extent}</td></tr>
+  <tr><td colspan="2" style="width:25%;"><strong>Geographical center (lat,lon): </strong></td><td>${feature_ids[id].latlon}</td></tr>
+  <tr><td colspan="2" style="width:25%;"><strong>Access constraint: </strong></td><td>${feature_ids[id].access_constraint}</td></tr>
+  <tr><td colspan="2" style="width:25%;"><strong>Use constraint: </strong></td><td>${feature_ids[id].use_constraint}</td></tr>
   <tr><td style="width:10%;" rowspan="4"><strong>Data Access</strong></td><td>HTTP access: </td><td><a href="${feature_ids[id].url_h}">${feature_ids[id].url_h}</a></td></tr>
-  <tr><td>OPeNDAP access: </td><td><a href="${feature_ids[id].url_o}">${feature_ids[id].url_o}</a></td></tr>
-  <tr><td>WMS access: </td><td><a href="${feature_ids[id].url_w}">${feature_ids[id].url_w}</a></td></tr>
+  <tr><td>OPeNDAP access: </td><td><a href="${feature_ids[id].url_o}.html">${feature_ids[id].url_o}</a></td></tr>
+  <tr><td>WMS access: </td><td><a href="${feature_ids[id].url_w}?SERVICE=WMS&REQUEST=GetCapabilities">${feature_ids[id].url_w}</a></td></tr>
   <tr><td>ODATA access: </td><td><a href="${feature_ids[id].url_od}">${feature_ids[id].url_od}</a></td></tr>
   <tr><td style="width:10%;" rowspan="6"><strong>Data Center</strong></td><td>Short name: </td><td>${feature_ids[id].dc_sh}</td></tr>
   <tr><td>Long name: </td><td>${feature_ids[id].dc_ln}</td></tr>
@@ -246,35 +312,28 @@ onclick="fetch_ts_variables('${feature_ids[id].url_o}', 'md-ts-${id}');">Interac
   <tr><td>Date: </td><td>${feature_ids[id].cit_date}</td></tr>
   <tr><td>Place: </td><td>${feature_ids[id].cit_place}</td></tr>
   <tr><td>Publisher:</td><td>${feature_ids[id].cit_publisher}</td></tr>
-  <tr><td colspan="2" style="width:25%;"><strong>Extent (N,S,E,W): </strong></td><td>${feature_ids[id].extent}</td></tr>
-  <tr><td colspan="2" style="width:25%;"><strong>Geographical center (lat,lon): </strong></td><td>${feature_ids[id].latlon}</td></tr>
   <tr><td colspan="2" style="width:25%;"><strong>Isotopic Category: </strong></td><td>${feature_ids[id].isotopic}</td></tr>
   <tr><td colspan="2" style="width:25%;"><strong>Keywords: </strong></td><td>${feature_ids[id].keywords}</td></tr>
   <tr><td colspan="2" style="width:25%;"><strong>Collection: </strong></td><td>${feature_ids[id].collection}</td></tr>
+  <tr><td colspan="2" style="width:25%;"><strong>Activity Type: </strong></td><td>${feature_ids[id].activity}</td></tr>
   <tr><td colspan="2" style="width:25%;"><strong>Dataset production status: </strong></td><td>${feature_ids[id].ds_prod_status}</td></tr>
   <tr><td colspan="2" style="width:25%;"><strong>Metadata status: </strong></td><td>${feature_ids[id].md_status}</td></tr>
-  <tr><td colspan="2" style="width:25%;"><strong>Last metadata update: </strong></td><td>${feature_ids[id].last_md_update}</td></tr>
 </table>
 </div>
+</div>
 
+<div class="panel">
 <div id="md-access-${id}" style="background-color:white; overflow-y: hidden; height: 0px" class="collapse">
-<table style="font-size: 14px; border:none;">
+<table class="cvl-table">
   <tr><td style="width:20%;"><strong>HTTP access: </strong></td><td><a href="${feature_ids[id].url_h}">${feature_ids[id].url_h}</a></td></tr>
-  <tr><td style="width:20%;"><strong>OPeNDAP access: </strong></td><td><a href="${feature_ids[id].url_o}">${feature_ids[id].url_o}</a></td></tr>
-  <tr><td style="width:20%;"><strong>WMS access: </strong></td><td><a href="${feature_ids[id].url_w}">${feature_ids[id].url_w}</a></td></tr>
+  <tr><td style="width:20%;"><strong>OPeNDAP access: </strong></td><td><a href="${feature_ids[id].url_o}.html">${feature_ids[id].url_o}</a></td></tr>
+  <tr><td style="width:20%;"><strong>WMS access: </strong></td><td><a href="${feature_ids[id].url_w}?SERVICE=WMS&REQUEST=GetCapabilities">${feature_ids[id].url_w}</a></td></tr>
   <tr><td style="width:20%;"><strong>ODATA access: </strong></td><td><a href="${feature_ids[id].url_od}">${feature_ids[id].url_od}</a></td></tr>
 </table>
 </div>
+</div>
 
-<div id="md-cit-${id}" style="background-color:white; overflow-y: hidden; height: 0px" class="collapse">
-<table style="font-size: 14px; border:none;">
-  <tr><td>Creator: </td><td>${feature_ids[id].cit_cr}</td></tr>
-  <tr><td>Title: </td><td>${feature_ids[id].cit_tit}</td></tr>
-  <tr><td>Date: </td><td>${feature_ids[id].cit_date}</td></tr>
-  <tr><td>Place: </td><td>${feature_ids[id].cit_place}</td></tr>
-  <tr><td>Publisher:</td><td>${feature_ids[id].cit_publisher}</td></tr>
-  <tr><td>Full citation string:</td><td>${feature_ids[id].cit_cr},${feature_ids[id].cit_tit} (${feature_ids[id].cit_date}),${feature_ids[id].cit_place}, published by:${feature_ids[id].cit_publisher}</td></tr>
-</table>
+</div>
 </div>
 
 <div id="md-ts-${id}" style="background-color:white; overflow-y: hidden; height: 0px" class="collapse">
@@ -288,12 +347,11 @@ onclick="fetch_ts_variables('${feature_ids[id].url_o}', 'md-ts-${id}');">Interac
 `;
 
         if(true){
-        content.innerHTML += "Preview: <br><a target=\"_blank\" href=\"https://mynewsite.metsis.met.no/metsis/map/wms?dataset="+feature_ids[id].id+"&solr_core=nbs-l1\"><img style=\"padding: 0.8em;\"src=\""+feature_ids[id].thumb+"\"></a></br>";
-
+           if(feature_ids[id].thumb !==''){
+        content.innerHTML += feature_ids[id].title+"<a target=\"_blank\" href=\"https://"+site_name+"/metsis/map/wms?dataset="+feature_ids[id].id+"&solr_core="+feature_ids[id].core+"\"><img style=\"padding: 0.8em;\"src=\""+feature_ids[id].thumb+"\"></a></br>";
+        //content.innerHTML += feature_ids[id].title+"<img class=\"cvl-thumb\" style=\"padding: 0.8em;\"src=\""+feature_ids[id].thumb+"\"></a></br>";
+           }
         tooltip.innerHTML += markup;  
-        }else{
-        //tooltip.innerHTML += 'Get Metadata: <a target="_blank" href=\"https://adc-test.met.no/metsis/display/metadata/?core=l1&datasetID='+id+'\">'+feature_ids[id].title+'</a><br>';
-        tooltip.innerHTML += '<strong>'+feature_ids[id].title+'</strong> <button type="button" class="btn btn-info adc-button-small form-submit" data-toggle="collapse" data-target="#md'+id+'">More</button> <a href=\"https://adc-test.met.no/metsis/display/metadata/?core=l1&datasetID='+id+'\" style="margin-left:1em;" class="button btn btn-info adc-button-small">Full Metadata</a><br> <div style="height: 0.4em; background-color: white;"></div><div id="md'+id+'" style="background-color:white; overflow-y: hidden; height: 0px" class="collapse">Abstract: '+feature_ids[id].abs+'<br><strong>Time start:</strong> '+feature_ids[id].timeStart+'<br><strong>Time end:</strong>'+feature_ids[id].timeEnd+'</div>';
         }
      }
 
@@ -324,17 +382,22 @@ if ((extracted_info[i12][2][0] !== extracted_info[i12][2][1]) || (extracted_info
         abs: extracted_info[i12][5],
         time: [extracted_info[i12][6][0], extracted_info[i12][6][1]],
         thumb: extracted_info[i12][7],
-        related_info: [extracted_info[i12][8][0],extracted_info[i12][8][1]],
-        iso_keys_coll: extracted_info[i12][9],
+        related_info: extracted_info[i12][8][0],
+        iso_keys_coll_act: extracted_info[i12][9],
         info_status: extracted_info[i12][10],
         data_center: extracted_info[i12][11],
         citation: extracted_info[i12][12],
-        ts: extracted_info[i12][13],
+        has_ts: extracted_info[i12][13],
+        constraints: extracted_info[i12][14],
+        core: extracted_info[i12][15],
   });
   iconFeaturesPol.push(iconFeaturePol);
- 
 
-  iconFeaturePol.setStyle(iconStyleB);
+  if ((extracted_info[i12][1]).includes("S1") || (extracted_info[i12][1]).includes("S2")) {
+     iconFeaturePol.setStyle(iconStyleGr);
+  }else{
+     iconFeaturePol.setStyle(iconStyleBl);
+  }
 }
 }
 
@@ -367,17 +430,23 @@ if (pins) {
         abs: extracted_info[i12][5],
         time: [extracted_info[i12][6][0], extracted_info[i12][6][1]],
         thumb: extracted_info[i12][7],
-        related_info: [extracted_info[i12][8][0],extracted_info[i12][8][1]],
-        iso_keys_coll: extracted_info[i12][9],
+        related_info: extracted_info[i12][8][0],
+        iso_keys_coll_act: extracted_info[i12][9],
         info_status: extracted_info[i12][10],
         data_center: extracted_info[i12][11],
         citation: extracted_info[i12][12],
-        ts: extracted_info[i12][13],
+        has_ts: extracted_info[i12][13],
+        constraints: extracted_info[i12][14],
+        core: extracted_info[i12][15],
     });
 
     iconFeaturesPin.push(iconFeaturePin);
     if ((extracted_info[i12][2][0] !== extracted_info[i12][2][1]) || (extracted_info[i12][2][2] !== extracted_info[i12][2][3])) {
+       if ((extracted_info[i12][1]).includes("S1") || (extracted_info[i12][1]).includes("S2")) {
+          iconFeaturePin.setStyle(iconStylePGr);
+       }else{
        iconFeaturePin.setStyle(iconStyleP1);
+       }
     }else{
        iconFeaturePin.setStyle(iconStyleP2);
     }
@@ -403,6 +472,7 @@ buildFeatures(prj);
 
 // display clickable ID in tooltip
 id_tooltip()
+id_tooltip_h()
 
 //Mouseposition
 var mousePositionControl = new ol.control.MousePosition({
@@ -419,26 +489,17 @@ var zoomToExtentControl = new ol.control.ZoomToExtent({
 map.addControl(zoomToExtentControl);
 
 
-var container = document.getElementById('popup');
-var content = document.getElementById('popup-content');
-var closer = document.getElementById('popup-closer');
-
-var overlay = new ol.Overlay({
-  element: container,
-  autoPan: true,
-  autoPanAnimation: {
-    duration: 250
-  }
-});
-
-map.addOverlay(overlay);
-
 function fetch_ts_variables(url_o, md_ts_id) {
   fetch('http://'+ts_ip+'/ncplot/plot?get=param&resource_url='+url_o)
   .then(response => response.json())
   .then(data => {
+    //clear options
+    var opts = document.getElementById("var_list");
+    var length = opts.options.length;
+    for (i = length-1; i > 0; i--) {
+       select.options[i] = null;
+    }
     for (const variable of data.y_axis) {
-      console.log(variable);
       var el = document.createElement("option");
       el.textContent = variable;
       el.value = variable;
@@ -447,9 +508,9 @@ function fetch_ts_variables(url_o, md_ts_id) {
   });
 }
 
-
 function plot_ts(url_o) {
-  document.getElementById('tsplot').innerHTML = "";
+  let loader =  '<img id="ts-plot-loader" src="/'+path+'/icons/loader.gif">';
+  document.getElementById('tsplot').innerHTML = loader;
   var variable = document.getElementById("var_list").value;
   fetch('http://'+ts_ip+'/ncplot/plot?get=plot&resource_url='+url_o+'&variable='+variable)
   .then(function (response) {
@@ -457,7 +518,22 @@ function plot_ts(url_o) {
   })
   .then(function (item) {
       Bokeh.embed.embed_item(item);
+      document.getElementById('tsplot').innerHTML = '';
   })
 }
 
+
+//function addRow() {
+//     var table = document.getElementById("list");
+//     var one = JSON.parse(localStorage["createEvent"]);
+//     for (var i = 0; i < one.length; i++) {
+//         var this_tr = document.createElement("tr");
+//         for (var j=0; j < one[i].length; j++) {
+//             var this_td = document.createElement("td");
+//             var text = document.createTextNode(one[i][j]);
+//             this_td.appendChild(text);
+//             this_tr.appendChild(this_td);
+//         }
+//         table.appendChild(this_tr);
+//}
 

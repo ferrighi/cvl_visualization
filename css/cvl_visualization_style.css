@@ -1,19 +1,43 @@
 .block-cvl-visualization .map-cvl {
   width: 100%;
-  height: 100%;
   margin: auto;
   box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2), 0 6px 20px 0 rgba(0,0,0,0.19);
 }
 
-.block-cvl-visualization .id-tooltip [id="tooltip"] div{
-  background-color: gainsboro;
-}
-
-.block-cvl-visualization .ol-overlay-container {
+.block-cvl-visualization .thumb-pop {
   position: absolute;
   left: 1em !important;
   bottom: 2em !important;
   top: unset !important;
+}
+
+.block-cvl-visualization .panel {
+  margin-bottom: 0em;
+}
+
+.block-cvl-visualization .cvl-table tr td {
+  font-size: 14px; 
+  vertical-align: middle;
+}
+
+.block-cvl-visualization .cvl-button {
+  background-color: #fafafa;
+  color: #333;
+  display: inline-block;
+  margin: 0.5em;
+  padding: 0.5em;
+  font-weight: 400;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: middle;
+  border: 1px solid #bbb;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.block-cvl-visualization .cvl-thumb {
+  border: 0.1em solid black;
+  margin: 0.3em;
 }
 
 .block-cvl-visualization .ol-viewport {
@@ -28,5 +52,38 @@
 }
 
 .block-cvl-visualization #tooltip {
-   padding: 5px;
+  margin-top: 1em; 
+  margin-bottom: 1em; 
+  background-color: rgba(0,0,0,0.2); 
+  font-size: 14px; 
+  width:100%;
+  padding: 5px;
 }
+
+.block-cvl-visualization #tooltip-hov {
+  font-size: small; 
+  padding: 0.2em;
+  background: white;
+  width:100%;
+  box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2), 0 6px 20px 0 rgba(0,0,0,0.19);
+}
+
+.block-cvl-visualization #popup{
+  box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2), 0 6px 20px 0 rgba(0,0,0,0.19); 
+  max-width: 30em; 
+  height: 30em; 
+  background: white; 
+  overflow: auto;
+}
+
+
+.block-cvl-visualization #popup-content {
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.block-cvl-visualization #ts-plot-loader {
+  display: block; 
+  margin: auto;
+}
+

@@ -51,6 +51,8 @@ function cvl_visualization_block_view($delta='') {
 function cvl_visualization_main_content(){
   global $base_url;
 
+  $site_name = variable_get('site_name', "Default site name");
+
   $md_prefix = variable_get('md_prefix');
   $solr_ip = variable_get('solr_ip');
   $solr_port = variable_get('solr_port');
@@ -76,22 +78,23 @@ function cvl_visualization_main_content(){
 
 
   $read_ds = variable_get('datasets');
-  $read_ds_idcore = explode(',', $read_ds);
+  $split_ds = array_map('trim', explode(',', $read_ds));
   $datasets = [];
 
-  foreach ($read_ds_idcore as $ds) {
-    $id_core = explode('|', $ds);
-    $datasets[] = array("id" => $id_core[0],
-                        "core" => $id_core[1]);
+  foreach ($split_ds as $ds) {
+    $element = explode('|', $ds);
+    $datasets[] = array("id" => $element[0],
+                        "core" => $element[1],
+                        "ts" => $element[2]);
   }
 
   //collect data according to core
   foreach ($datasets as $key => $value) {
     if ($value['core'] == 'ADC') {
-      $adc_list[] = $value['id'];  
+      $adc_list[] = array($value['id'], $value['ts']);  
     }
     elseif ($value['core'] == 'NBS') {
-      $nbs_list[] = $value['id'];  
+      $nbs_list[] = array($value['id'], $value['ts']);
     }
   }
   //drupal_set_message(print_r($nbs_list,TRUE),'warning');
@@ -103,74 +106,176 @@ function cvl_visualization_main_content(){
 
   // Define queries and extract data info
 
-  $fields = "id, mmd_title, 
-                 mmd_abstract, 
-                 mmd_data_access_type, 
-                 mmd_data_access_resource, 
-                 mmd_temporal_extent_start_date, 
-                 mmd_temporal_extent_end_date, 
-                 mmd_iso_topic_category, 
-                 mmd_keywords_keyword, 
-                 mmd_dataset_production_status, 
-                 mmd_metadata_status,
-                 mmd_last_metadata_update, 
-                 mmd_collection, 
-                 mmd_geographic_extent_rectangle_north, 
-                 mmd_geographic_extent_rectangle_south, 
-                 mmd_geographic_extent_rectangle_east, 
-                 mmd_geographic_extent_rectangle_west, 
-                 mmd_related_information_type,
-                 mmd_related_information_resource,
-                 mmd_data_center_data_center_name_short_name,
-                 mmd_data_center_data_center_name_long_name,
-                 mmd_data_center_data_center_url,
-                 mmd_data_center_contact_role,
-                 mmd_data_center_contact_name,
-                 mmd_data_center_contact_email,
-                 mmd_dataset_citation_dataset_creator,
-                 mmd_dataset_citation_dataset_title,
-                 mmd_dataset_citation_dataset_release_date,
-                 mmd_dataset_citation_dataset_release_place,
-                 mmd_dataset_citation_dataset_publisher,
-                 mmd_data_access_wms_layers_wms_layer";
+  $fields = "id, 
+             mmd_metadata_identifier, 
+             mmd_title, 
+             mmd_abstract, 
+             mmd_access_constraint, 
+             mmd_use_constraint,
+             mmd_data_access_type, 
+             mmd_data_access_resource, 
+             mmd_temporal_extent_start_date, 
+             mmd_temporal_extent_end_date, 
+             mmd_iso_topic_category, 
+             mmd_keywords_keyword, 
+             mmd_dataset_production_status, 
+             mmd_metadata_status,
+             mmd_last_metadata_update, 
+             mmd_collection, 
+             mmd_activity_type,
+             mmd_geographic_extent_rectangle_north, 
+             mmd_geographic_extent_rectangle_south, 
+             mmd_geographic_extent_rectangle_east, 
+             mmd_geographic_extent_rectangle_west, 
+             mmd_related_information_type,
+             mmd_related_information_resource,
+             mmd_data_center_data_center_name_short_name,
+             mmd_data_center_data_center_name_long_name,
+             mmd_data_center_data_center_url,
+             mmd_data_center_contact_role,
+             mmd_data_center_contact_name,
+             mmd_data_center_contact_email,
+             mmd_dataset_citation_dataset_creator,
+             mmd_dataset_citation_dataset_title,
+             mmd_dataset_citation_dataset_release_date,
+             mmd_dataset_citation_dataset_release_place,
+             mmd_dataset_citation_dataset_publisher,
+             mmd_data_access_wms_layers_wms_layer";
 
 
   //collect query according to core
   foreach ($adc_list as $value) { 
-    $query_adc .= ($query_adc == '') ? 'mmd_metadata_identifier:"' . $value . '"': ' OR mmd_metadata_identifier:"' . $value . '"';
+    $query_adc .= ($query_adc == '') ? 'mmd_metadata_identifier:"' . $value[0] . '"': ' OR mmd_metadata_identifier:"' . $value[0] . '"';
   }
-  foreach ($nbs_list as $value) { 
-    $query_nbs .= ($query_nbs == '') ? 'mmd_metadata_identifier:"' . $value . '"': ' OR mmd_metadata_identifier:"' . $value . '"';
-  }
+  //foreach ($nbs_list as $value) { 
+  //  $query_nbs .= ($query_nbs == '') ? 'mmd_metadata_identifier:"' . $value[0] . '"': ' OR mmd_metadata_identifier:"' . $value[0] . '"';
+  //}
+
+  $day = (new DateTime())->modify('-1 day')->format('Y-m-d\TH:i:s\Z');
+  $query_nbs = 'mmd_temporal_extent_start_date:['.$day.' TO *] AND mmd_cloud_cover_value:[* TO 20]';
 
   // Define connection to SolR for ADC and results of the query
-
-  $con_adc = new HttpConnection($solr_ip, $solr_port);
+  $adc_l1c = 'adc-l1';
+  $adc_t = 'adc-thumbnail';
+  $con_adc = new HttpConnection_cvl($solr_ip, $solr_port);
   //drupal_set_message(print_r($con_adc,'TRUE'),'warning');
-  $res_adc = $con_adc->get('/solr/adc-l1/select', array("q" =>$query_adc, "start" => 0, "rows" => 1000, "wt" => "json", "fl" => $fields,));
+  $res_adc = $con_adc->get('/solr/'.$adc_l1c.'/select', array("q" =>$query_adc, "start" => 0, "rows" => 1000, "wt" => "json", "fl" => $fields,));
   $query_adc_res = json_decode($res_adc['body'], true);
 
   // Define connection to SolR for NBS and results of the query
-  $con_nbs = new HttpConnection($solr_ip, $solr_port);
-  $res_nbs = $con_nbs->get('/solr/nbs-l1/select', array("q" =>$query_nbs, "start" => 0, "rows" => 1000, "wt" => "json", "fl" => $fields,));
+  $nbs_l1c = 'nbs-l1';
+  $nbs_t = 'nbs-thumbnail';
+  $con_nbs = new HttpConnection_cvl($solr_ip, $solr_port);
+  $res_nbs = $con_nbs->get('/solr/'.$nbs_l1c.'/select', array("q" =>$query_nbs, "start" => 0, "rows" => 1000, "wt" => "json", "fl" => $fields,));
   $query_nbs_res = json_decode($res_nbs['body'], true);
 
   $data_info = [];
 
+  
   $count = 0;
   foreach ($query_adc_res['response']['docs'] as $doc) {
+    $id = $doc['id'];
+    $metadata_identifier = $doc[$md_prefix . 'metadata_identifier'];
+    $title = $doc[$md_prefix . 'title']['0'];
+    $abstract = $doc[$md_prefix . 'abstract']['0'];
+
+    $address_tot = $doc[$md_prefix . 'data_access_resource'];
+    $dar = cvl_parse_solr_mmd_type_one($address_tot);
+    $address_o = isset($dar['"OPeNDAP"']) ? $dar['"OPeNDAP"'] : '';
+    $address_w = isset($dar['"OGC WMS"']) ? $dar['"OGC WMS"'] : '';
+    $address_h = isset($dar['"HTTP"']) ? $dar['"HTTP"'] : '';
+    $address_od = isset($dar['"ODATA"']) ? $dar['"ODATA"'] : '';
+    
+    //$address_o = json_decode("{".$address_tot[0]."}",true)['OPeNDAP'];
+    //$address_w = json_decode("{".$address_tot[1]."}",true)['OGC WMS'];
+    //$address_h = json_decode("{".$address_tot[2]."}",true)['HTTP'];
+    //$address_od = json_decode("{".$address_tot[3]."}",true)['ODATA'];
+
+    $north = $doc[$md_prefix . 'geographic_extent_rectangle_north'];
+    $south = $doc[$md_prefix . 'geographic_extent_rectangle_south'];
+    $east = $doc[$md_prefix . 'geographic_extent_rectangle_east'];
+    $west = $doc[$md_prefix . 'geographic_extent_rectangle_west'];
+    $latlon = array(($south+$north)/2, ($east+$west)/2);
+
+    $time_start = $doc[$md_prefix . 'temporal_extent_start_date'];
+    $time_end = isset($doc[$md_prefix . 'temporal_extent_end_date']) ? $doc[$md_prefix . 'temporal_extent_end_date'] : '-';
+
+    $fl_thumb = implode(",", array("thumbnail_data", "thumbnail", "base_map"));
+    $con_thumb = new HttpConnection_cvl($solr_ip, $solr_port);
+    $res_thumb = $con_thumb->get('/solr/'.$adc_t.'/select', array("q" => $md_prefix . "metadata_identifier:" . "\"" . $id . "\"", "wt" => "json", "fl" => "$fl_thumb",));
+    $thumb_dec = json_decode($res_thumb['body'], true);
+    $thumbnail_data = isset($thumb_dec['response']['docs'][0]['thumbnail_data']) ? $thumb_dec['response']['docs'][0]['thumbnail_data'] : '' ;
+
+    if (isset($doc[$md_prefix . 'related_information_resource'])){
+       $related_info = cvl_parse_related_information_resource($doc[$md_prefix . 'related_information_resource']);
+    }  
+    $related_lp = isset($related_info['Dataset landing page']['uri']) ? $related_info['Dataset landing page']['uri'] : '';
+    //$related_ug = $related_info['Users guide']['uri'];
+ 
+    $isotopic = isset($doc[$md_prefix . 'iso_topic_category']) ? $doc[$md_prefix . 'iso_topic_category']  : '' ;
+    $keywords = isset($doc[$md_prefix . 'keywords_keyword'])? $doc[$md_prefix . 'keywords_keyword'] : '' ;
+    $collection = isset($doc[$md_prefix . 'collection']) ? $doc[$md_prefix . 'collection'] : '' ;
+    $activity = isset($doc[$md_prefix . 'activity_type']) ? $doc[$md_prefix . 'activity_type'] : '' ;
+
+    $ds_prod_status = isset($doc[$md_prefix . 'dataset_production_status']) ? $doc[$md_prefix . 'dataset_production_status'] : '' ;
+    $md_status = isset($doc[$md_prefix . 'metadata_status']) ? $doc[$md_prefix . 'metadata_status'] : '' ;
+    $last_md_update = isset($doc[$md_prefix . 'last_metadata_update']) ? $doc[$md_prefix . 'last_metadata_update'] : '';
+
+
+    $dc_sh =  isset($doc[$md_prefix . 'data_center_data_center_name_short_name']) ? $doc[$md_prefix . 'data_center_data_center_name_short_name'] : '';
+    $dc_ln =  isset($doc[$md_prefix . 'data_center_data_center_name_long_name']) ? $doc[$md_prefix . 'data_center_data_center_name_long_name'] : '';
+    $dc_url = isset($doc[$md_prefix . 'data_center_data_center_url']) ? $doc[$md_prefix . 'data_center_data_center_url'] : '';
+    $dc_cr =  isset($doc[$md_prefix . 'data_center_contact_role']) ? $doc[$md_prefix . 'data_center_contact_role'] : '';
+    $dc_cn =  isset($doc[$md_prefix . 'data_center_contact_name']) ? $doc[$md_prefix . 'data_center_contact_name'] : '';
+    $dc_ce =  isset($doc[$md_prefix . 'data_center_contact_email']) ? $doc[$md_prefix . 'data_center_contact_email'] : '';
+
+
+    $cit_cr =  isset($doc[$md_prefix . 'dataset_citation_dataset_creator']) ? $doc[$md_prefix . 'dataset_citation_dataset_creator'] : '';
+    $cit_tit =  isset($doc[$md_prefix . 'dataset_citation_dataset_title']) ? $doc[$md_prefix . 'dataset_citation_dataset_title'] : '';
+    $cit_date =  isset($doc[$md_prefix . 'dataset_citation_dataset_date']) ? $doc[$md_prefix . 'dataset_citation_dataset_date'] : '';
+    $cit_place =  isset($doc[$md_prefix . 'dataset_citation_dataset_place']) ? $doc[$md_prefix . 'dataset_citation_dataset_place'] : '';
+    $cit_publisher =  isset($doc[$md_prefix . 'dataset_citation_dataset_publisher']) ? $doc[$md_prefix . 'dataset_citation_dataset_publisher'] : '';
+
+    $access_const =  isset($doc[$md_prefix . 'access_constraint']) ? $doc[$md_prefix . 'access_constraint'] : 'Unspecified';
+    $use_const =  isset($doc[$md_prefix . 'use_constraint'])? $doc[$md_prefix . 'use_constraint'] : 'Unspecified';
+
+    foreach ($adc_list as $el) {
+      if ($el[0] === $metadata_identifier){
+         $ts = $el[1];
+       }
+    }
+
+    $data_info[$count] = array(array($address_o,$address_w,$address_h,$address_od), 
+                               $id, 
+                               array($north,$south,$east,$west), 
+                               $latlon, 
+                               $title, 
+                               $abstract, 
+                               array($time_start, $time_end),
+                               $thumbnail_data,
+                               array($related_lp),
+                               array($isotopic, $keywords, $collection, $activity),
+                               array($ds_prod_status, $md_status, $last_md_update),
+                               array($dc_sh, $dc_ln, $dc_url, $dc_cr, $dc_cn, $dc_ce),
+                               array($cit_cr, $cit_tit, $cit_date, $cit_place, $cit_publisher),
+                               $ts, 
+                               array($access_const, $use_const),
+                               $adc_l1c);
+
+    $count = $count + 1; 
+ }
+
+  foreach ($query_nbs_res['response']['docs'] as $doc) {
     $id = $doc['id'];
     $title = $doc[$md_prefix . 'title']['0'];
     $abstract = $doc[$md_prefix . 'abstract']['0'];
 
-    $address_type = $doc[$md_prefix . 'data_access_type'];
-    //drupal_set_message(print_r($address_type,TRUE),'warning');
-
     $address_tot = $doc[$md_prefix . 'data_access_resource'];
-    $address_o = json_decode("{".$address_tot[0]."}",true)['OPeNDAP'];
-    $address_w = json_decode("{".$address_tot[1]."}",true)['OGC WMS'];
-    $address_h = json_decode("{".$address_tot[2]."}",true)['HTTP'];
-    $address_od = json_decode("{".$address_tot[3]."}",true)['ODATA'];
+    $dar = cvl_parse_solr_mmd_type_one($address_tot);
+    $address_o = $dar['"OPeNDAP"'];
+    $address_w = $dar['"OGC WMS"'];
+    $address_h = $dar['"HTTP"'];
+    $address_od = $dar['"ODATA"'];
 
     $north = $doc[$md_prefix . 'geographic_extent_rectangle_north'];
     $south = $doc[$md_prefix . 'geographic_extent_rectangle_south'];
@@ -182,18 +287,20 @@ function cvl_visualization_main_content(){
     $time_end = $doc[$md_prefix . 'temporal_extent_end_date'];
 
     $fl_thumb = implode(",", array("thumbnail_data", "thumbnail", "base_map"));
-    $con_thumb = new HttpConnection($solr_ip, $solr_port);
-    $res_thumb = $con_thumb->get('/solr/adc-thumbnail/select', array("q" => $md_prefix . "metadata_identifier:" . "\"" . $id . "\"", "wt" => "json", "fl" => "$fl",));
+    $con_thumb = new HttpConnection_cvl($solr_ip, $solr_port);
+    $res_thumb = $con_thumb->get('/solr/'.$nbs_t.'/select', array("q" => $md_prefix . "metadata_identifier:" . "\"" . $id . "\"", "wt" => "json", "fl" => "$fl_thumb",));
     $thumb_dec = json_decode($res_thumb['body'], true);
     $thumbnail_data = $thumb_dec['response']['docs'][0]['thumbnail_data'];
 
-    $related_info = adc_parse_related_information_resource($doc[$md_prefix . 'related_information_resource']);
+    $related_info = cvl_parse_related_information_resource($doc[$md_prefix . 'related_information_resource']);
     $related_lp = $related_info['Dataset landing page']['uri'];
-    $related_ug = $related_info['Users guide']['uri'];
+    //$related_ug = $related_info['Users guide']['uri'];
 
     $isotopic = $doc[$md_prefix . 'iso_topic_category'];
     $keywords = $doc[$md_prefix . 'keywords_keyword'];
     $collection = $doc[$md_prefix . 'collection'];
+    $activity = $doc[$md_prefix . 'activity_type'];
+
 
     $ds_prod_status = $doc[$md_prefix . 'dataset_production_status'];
     $md_status = $doc[$md_prefix . 'metadata_status'];
@@ -208,19 +315,18 @@ function cvl_visualization_main_content(){
     $dc_ce =  $doc[$md_prefix . 'data_center_contact_email'];
 
 
-    $cit_cr =  $doc[$md_prefix . 'dataset_citation_dataset_creator'];
-    $cit_tit =  $doc[$md_prefix . 'dataset_citation_dataset_title'];
-    $cit_date =  $doc[$md_prefix . 'dataset_citation_dataset_date'];
-    $cit_place =  $doc[$md_prefix . 'dataset_citation_dataset_place'];
-    $cit_publisher =  $doc[$md_prefix . 'dataset_citation_dataset_publisher'];
+    $cit_cr =  isset($doc[$md_prefix . 'dataset_citation_dataset_creator']) ? $doc[$md_prefix . 'dataset_citation_dataset_creator'] : '';
+    $cit_tit =  isset($doc[$md_prefix . 'dataset_citation_dataset_title']) ? $doc[$md_prefix . 'dataset_citation_dataset_title'] : '';
+    $cit_date =  isset($doc[$md_prefix . 'dataset_citation_dataset_date']) ? $doc[$md_prefix . 'dataset_citation_dataset_date'] : '';
+    $cit_place =  isset($doc[$md_prefix . 'dataset_citation_dataset_place']) ? $doc[$md_prefix . 'dataset_citation_dataset_place'] : '';
+    $cit_publisher =  isset($doc[$md_prefix . 'dataset_citation_dataset_publisher']) ? $doc[$md_prefix . 'dataset_citation_dataset_publisher'] : '';
 
+    $access_const =  isset($doc[$md_prefix . 'access_constraint']) ? $doc[$md_prefix . 'access_constraint'] : 'Unspecified';
+    $use_const =  isset($doc[$md_prefix . 'use_constraint'])? $doc[$md_prefix . 'use_constraint'] : 'Unspecified';
+    //drupal_set_message(print_r($access_const,'TRUE'),'warning');
 
+    $ts = 'false';
 
-    //if (adc_has_feature_type($doc[$md_prefix . 'metadata_identifier'], "timeSeries") === 1) {
-    // $ts = 'true';
-    //}else{
-    // $ts = 'false';
-   // }
     $data_info[$count] = array(array($address_o,$address_w,$address_h,$address_od), 
                                $id, 
                                array($north,$south,$east,$west), 
@@ -229,66 +335,14 @@ function cvl_visualization_main_content(){
                                $abstract, 
                                array($time_start, $time_end),
                                $thumbnail_data,
-                               array($related_lp, $related_ug),
-                               array($isotopic, $keywords, $collection),
+                               array($related_lp),
+                               array($isotopic, $keywords, $collection, $activity),
                                array($ds_prod_status, $md_status, $last_md_update),
                                array($dc_sh, $dc_ln, $dc_url, $dc_cr, $dc_cn, $dc_ce),
                                array($cit_cr, $cit_tit, $cit_date, $cit_place, $cit_publisher),
-                               'true');
-
-    $count = $count + 1; 
- }
-
-  foreach ($query_nbs_res['response']['docs'] as $doc) {
-    $id = $doc['id'];
-    $title = $doc[$md_prefix . 'title']['0'];
-    $abstract = $doc[$md_prefix . 'abstract']['0'];
-
-    $address_type = $doc[$md_prefix . 'data_access_type'];
-
-    $address_tot = $doc[$md_prefix . 'data_access_resource'];
-    $address_o = json_decode("{".$address_tot[0]."}",true)['OPeNDAP'];
-    $address_w = json_decode("{".$address_tot[1]."}",true)['OGC WMS'];
-    $address_h = json_decode("{".$address_tot[2]."}",true)['HTTP'];
-    $address_od = json_decode("{".$address_tot[3]."}",true)['ODATA'];
-
-    $north = $doc[$md_prefix . 'geographic_extent_rectangle_north'];
-    $south = $doc[$md_prefix . 'geographic_extent_rectangle_south'];
-    $east = $doc[$md_prefix . 'geographic_extent_rectangle_east'];
-    $west = $doc[$md_prefix . 'geographic_extent_rectangle_west'];
-    $latlon = array(($south+$north)/2, ($east+$west)/2);
-
-    $time_start = $doc[$md_prefix . 'temporal_extent_start_date'];
-    $time_end = $doc[$md_prefix . 'temporal_extent_end_date'];
-
-    $fl_thumb = implode(",", array("thumbnail_data", "thumbnail", "base_map"));
-    $con_thumb = new HttpConnection($solr_ip, $solr_port);
-    $res_thumb = $con_thumb->get('/solr/nbs-thumbnail/select', array("q" => $md_prefix . "metadata_identifier:" . "\"" . $id . "\"", "wt" => "json", "fl" => "$fl",));
-    $thumb_dec = json_decode($res_thumb['body'], true);
-    $thumbnail_data = $thumb_dec['response']['docs'][0]['thumbnail_data'];
-
-    $related_info = adc_parse_related_information_resource($doc[$md_prefix . 'related_information_resource']);
-    $related_lp = $related_info['Dataset landing page']['uri'];
-    $related_ug = $related_info['Users guide']['uri'];
-    drupal_set_message(print_r($related_ug,TRUE),'warning');
-
-    $isotopic = $doc[$md_prefix . 'iso_topic_category'];
-    $keywords = $doc[$md_prefix . 'keywords_keyword'];
-
-    $ds_prod_status = $doc[$md_prefix . 'dataset_production_status'];
-    drupal_set_message(print_r($ds_prod_status,TRUE), 'warning');
-    $collection = $doc[$md_prefix . 'collection'];
-
-    $data_info[$count] = array(array($address_o,$address_w,$address_h,$address_od), 
-                               $id, 
-                               array($north,$south,$east,$west), 
-                               $latlon, 
-                               $title, 
-                               $abstract, 
-                               array($time_start, $time_end),
-                               $thumbnail_data,
-                               array($related_lp,$related_ug),
-                               array($isotopic,$keywords,$ds_prod_status,$collection));
+                               $ts, 
+                               array($access_const, $use_const),
+                               $nbs_l1c);
 
     $count = $count + 1; 
  }
@@ -298,17 +352,18 @@ function cvl_visualization_main_content(){
   drupal_add_js(array('extracted_info' => $data_info,
                       'pins' => 'TRUE',
                       'ts_ip' => $ts_ip,
-                      'path' => $mpath,), 'setting');
+                      'path' => $mpath,
+                      'site_name' => $site_name), 'setting');
 
   
 
 return 
 
   $string = <<<EOM
-    <div id="popup" class="ol-popup" style="box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2), 0 6px 20px 0 rgba(0,0,0,0.19); max-width: 300px; height: 300px; background: white; overflow: auto;">
-      <div id="popup-content"></div>
-    </div>
-  <div id="map-cvl" class="map-cvl" style="box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2), 0 6px 20px 0 rgba(0,0,0,0.19);">
+  <div id="popup" class="ol-popup">
+    <div id="popup-content"></div>
+  </div>
+  <div id="map-cvl" class="map-cvl">
      <script type="text/javascript" src="/$mpath/js/cvl_visualization.js"></script>
   </div>
 
@@ -325,7 +380,7 @@ EOM;
  *  $con = new HttpConnection('normap-dev.met.no','8080');
  *  $res=$con->get('/solr/l1-adcsolr/select',array("q"=>"*:*","rows"=>30,"wt"=>"json","indent"=>"true"));
  */
-class HttpConnection {
+class HttpConnection_cvl {
 
     private $host;
     private $path;
@@ -409,7 +464,7 @@ class HttpConnection {
 
         list($headers, $body) = explode("\n\n", $this->response, 2);
 
-        $headers = new HeaderList($headers);
+        $headers = new HeaderList_cvl($headers);
         return array('headers' => $headers->to_a(), 'body' => $body, 'code' => $headers->get_response_code());
     }
 
@@ -418,7 +473,7 @@ class HttpConnection {
 /**
  * should be moved out to its own file
  */
-class HeaderList {
+class HeaderList_cvl {
 
     private $headers;
     private $response_code;
@@ -501,7 +556,7 @@ class HeaderList {
 }
 
 
-function adc_parse_related_information_resource($rir) {
+function cvl_parse_related_information_resource($rir) {
     $related_information_resource = [];
     foreach ($rir as $rir_elem) {
         $la = explode(':', $rir_elem, 2);
@@ -516,28 +571,18 @@ function adc_parse_related_information_resource($rir) {
     } return $related_information_resource;
 }
 
-function adc_has_feature_type($metadata_identifier, $ft) {
-  $feature_type = adc_get_feature_type($metadata_identifier);
-  if ($feature_type === $ft) {
-    return 1;
-  }
-  return 0;
+function cvl_parse_solr_mmd_type_one($metadata_element) {
+
+  $element_array = [];
+  if (is_array($metadata_element)) {
+    foreach ($metadata_element as $k => $v) {
+      $la = explode(",", $v);
+      $lal = explode(":", $la[0], 2);
+      $lar = explode(":", $la[1], 2);
+      $element_array[$lal[0]] = str_replace(array('"'), '', $lal[1]);
+      $element_array[$lal[0] . " " . $lar[0]] = $lar[1];
+    }
+  } return $element_array;
 }
 
-function adc_get_feature_type($metadata_identifier) {
-  $con = new HttpConnection($solr_ip, $solr_port);
-  $res = $con->get('/solr/adc-l1/select', [
-    "q" => $md_prefix . "metadata_identifier:" . '"' . $metadata_identifier . '"',
-    "fl" => "feature_type",
-    "wt" => "json",
-    "indent" => "true",
-  ]);
-  $body = json_decode($res['body'], TRUE);
-  if ($body['response']['numFound'] > 0) {
-    if (isset($body['response']['docs'][0]['feature_type'])) {
-      return $body['response']['docs'][0]['feature_type'];
-    }
-  }
-  return 0;
-}
 
