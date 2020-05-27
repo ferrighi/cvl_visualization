@@ -182,7 +182,7 @@ function id_tooltip_h(){
       tlphov.style.display = 'inline-block';
       tlphov.innerHTML = '';
       for(var id in feature_ids){
-        overlayh.setPosition(evt.coordinate);
+        overlayh.setPosition([coordinate[0] + coordinate[0]*2/100, coordinate[1] -  coordinate[1]*2/100]);
         tlphov.innerHTML += feature_ids[id].title+'<br>';
       }
     }
