@@ -6,9 +6,9 @@ function cvl_visualization_admin() {
 
   $form['datasets'] = array(
     '#type' => 'textarea',
-    '#title' => t('Enter datasets identifier'),
+    '#title' => t('Enter datasets identifier, core and boolean for timeseries (true=dataset is time series)'),
     '#default_value' => variable_get('datasets', ''),
-    '#description' => t("datasets identifier and core in the form 'id1|core1, id2|core2'"),
+    '#description' => t("datasets identifier and core in the form 'id1|core1|true/false, id2|core2|true/false'"),
   );
 
   $form['md_prefix'] = array(
@@ -19,7 +19,7 @@ function cvl_visualization_admin() {
   );
 
   $form['solr_ip'] = array(
-    '#type' => 'textfield',
+    '#type' => 'password',
     '#title' => t('Enter SolR ip'),
     '#default_value' => variable_get('solr_ip', ''),
     '#description' => t("IP of SolR server to be queried"),
@@ -33,7 +33,7 @@ function cvl_visualization_admin() {
   );
 
   $form['ts_ip'] = array(
-    '#type' => 'textfield',
+    '#type' => 'password',
     '#title' => t('Enter TS service IP and PORT'),
     '#default_value' => variable_get('ts_ip', ''),
     '#description' => t("IP:PORT of the time series service"),

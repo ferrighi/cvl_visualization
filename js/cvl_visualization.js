@@ -142,7 +142,7 @@ layer['base']  = new ol.layer.Tile({
    type: 'base',
    title: 'base',
    source: new ol.source.TileWMS({ 
-       url: 'http://public-wms.met.no/backgroundmaps/northpole.map',
+       url: 'https://public-wms.met.no/backgroundmaps/northpole.map',
        params: {'LAYERS': 'world', 'TRANSPARENT':'false', 'VERSION':'1.1.1','FORMAT':'image/png'},
        crossOrigin: 'anonymous'
    })
@@ -262,9 +262,9 @@ function id_tooltip(){
 
 var markup = `
 <a target="_blank" href="${feature_ids[id].url_lp}" style="width: 55%; display: inline-block;"><strong>${feature_ids[id].title}</strong></a>
-<button type="button" style="margin-left: 2em;" class="cvl-button" data-toggle="collapse" data-target="#md-more-${id}">Metadata</button> 
-<button type="button" style="margin-left: 2em;" class="cvl-button"><a target="_blank" href="${(feature_ids[id].url_h) !='' ? feature_ids[id].url_h : feature_ids[id].url_lp}">Direct Download</a></button>
-<button type="button" style="margin-left: 2em; display: ${(feature_ids[id].has_ts == 'true') ? 'unset': 'none'};" class="cvl-button" data-toggle="collapse" data-target="#md-ts-${id}" 
+<button type="button" class="cvl-button" data-toggle="collapse" data-target="#md-more-${id}">Metadata</button> 
+<button type="button" class="cvl-button"><a target="_blank" href="${(feature_ids[id].url_h) !='' ? feature_ids[id].url_h : feature_ids[id].url_lp}">Direct Download</a></button>
+<button type="button" style="display: ${(feature_ids[id].has_ts == 'true') ? 'unset': 'none'};" class="cvl-button" data-toggle="collapse" data-target="#md-ts-${id}" 
 onclick="fetch_ts_variables('${feature_ids[id].url_o}', 'md-ts-${id}');">Interactive Plotting</button>
 
 <div style="height: 0.4em; background-color: white;"></div>
@@ -348,7 +348,7 @@ onclick="fetch_ts_variables('${feature_ids[id].url_o}', 'md-ts-${id}');">Interac
 
         if(true){
            if(feature_ids[id].thumb !==''){
-        content.innerHTML += feature_ids[id].title+"<a target=\"_blank\" href=\"https://"+site_name+"/metsis/map/wms?dataset="+feature_ids[id].id+"&solr_core="+feature_ids[id].core+"\"><img style=\"padding: 0.8em;\"src=\""+feature_ids[id].thumb+"\"></a></br>";
+        content.innerHTML += feature_ids[id].title+"<a target=\"_blank\" href=\""+site_name+"/metsis/map/wms?dataset="+feature_ids[id].id+"&solr_core="+feature_ids[id].core+"\"><img class=\"cvl-thumb\" style=\"padding: 0.8em;\"src=\""+feature_ids[id].thumb+"\"></a></br>";
         //content.innerHTML += feature_ids[id].title+"<img class=\"cvl-thumb\" style=\"padding: 0.8em;\"src=\""+feature_ids[id].thumb+"\"></a></br>";
            }
         tooltip.innerHTML += markup;  
