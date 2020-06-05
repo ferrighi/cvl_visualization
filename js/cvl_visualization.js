@@ -276,12 +276,12 @@ onclick="fetch_ts_variables('${feature_ids[id].url_o}', 'md-ts-${id}');">Interac
   <td style="border: none;">
   <strong>Title: </strong>${feature_ids[id].title}<br>
   <strong>Abstract: </strong>${feature_ids[id].abs}<br>
-  <button data-parent="#cvl-acc" type="button" class="cvl-button" data-toggle="collapse" style="margin-top: 2em;" data-target="#md-full-${id}">Full Metadata</button> 
-  <button data-parent="#cvl-acc" type="button" class="cvl-button" data-toggle="collapse" style="margin-top: 2em;" data-target="#md-access-${id}">Data Access</button> 
+  <button data-parent="#cvl-acc-${id}" type="button" class="cvl-button" data-toggle="collapse" style="margin-top: 2em;" data-target="#md-full-${id}">Full Metadata</button> 
+  <button data-parent="#cvl-acc-${id}" type="button" class="cvl-button" data-toggle="collapse" style="margin-top: 2em;" data-target="#md-access-${id}">Data Access</button> 
   </td></tr>
 </table>
 
-<div id="cvl-acc">
+<div id="cvl-acc-${id}">
 <div class="panel">
 <div id="md-full-${id}" style="background-color:white; overflow-y: hidden; height: 0px" class="collapse">
 <table class="cvl-table">
@@ -490,7 +490,7 @@ map.addControl(zoomToExtentControl);
 
 
 function fetch_ts_variables(url_o, md_ts_id) {
-  fetch('http://'+ts_ip+'/ncplot/plot?get=param&resource_url='+url_o)
+  fetch('https://'+ts_ip+'/ncplot/plot?get=param&resource_url='+url_o)
   .then(response => response.json())
   .then(data => {
     //clear options
@@ -512,7 +512,7 @@ function plot_ts(url_o) {
   let loader =  '<img id="ts-plot-loader" src="/'+path+'/icons/loader.gif">';
   document.getElementById('tsplot').innerHTML = loader;
   var variable = document.getElementById("var_list").value;
-  fetch('http://'+ts_ip+'/ncplot/plot?get=plot&resource_url='+url_o+'&variable='+variable)
+  fetch('https://'+ts_ip+'/ncplot/plot?get=plot&resource_url='+url_o+'&variable='+variable)
   .then(function (response) {
       return response.json();
   })
