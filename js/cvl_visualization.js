@@ -161,6 +161,7 @@ var map = new ol.Map({
                  zoom: defzoom, 
                  minZoom: 1,
                  maxZoom: 12,
+	         extent: ext4326,
                  center: center4326,
                  projection: prj,
    })
