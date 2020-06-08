@@ -58,16 +58,16 @@ function cvl_visualization_main_content(){
 
   $mpath = drupal_get_path('module', 'cvl_visualization');
 
-  $ol5_path = libraries_get_path('openlayers5');
+  $ol6_path = libraries_get_path('openlayers6');
   $jq_path = drupal_get_path('module', 'jquery_update');
 
   drupal_add_css($mpath . '/css/cvl_visualization_style.css');
-  drupal_add_css($ol5_path . '/css/ol.css');
-  drupal_add_css($ol5_path . '/apidoc/styles/bootstrap.min.css');
+  drupal_add_css($ol6_path . '/css/ol.css');
+  drupal_add_css($ol6_path . '/apidoc/styles/bootstrap.min.css');
 
 
-  drupal_add_js($ol5_path . '/build/ol.js');
-  drupal_add_js($ol5_path . '/apidoc/scripts/bootstrap.min.js');
+  drupal_add_js($ol6_path . '/build/ol.js');
+  drupal_add_js($ol6_path . '/apidoc/scripts/bootstrap.min.js');
   drupal_add_js('https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.3.15/proj4.js', 'external');
   drupal_add_js('https://cdn.pydata.org/bokeh/release/bokeh-2.0.2.min.js', 'external');
   drupal_add_js('https://cdn.pydata.org/bokeh/release/bokeh-widgets-2.0.2.min.js', 'external');
@@ -149,7 +149,7 @@ function cvl_visualization_main_content(){
   //  $query_nbs .= ($query_nbs == '') ? 'mmd_metadata_identifier:"' . $value[0] . '"': ' OR mmd_metadata_identifier:"' . $value[0] . '"';
   //}
 
-  $day = (new DateTime())->modify('-2 day')->format('Y-m-d\TH:i:s\Z');
+  $day = (new DateTime())->modify('-1 day')->format('Y-m-d\TH:i:s\Z');
   $query_nbs = 'mmd_temporal_extent_start_date:['.$day.' TO *] AND mmd_cloud_cover_value:[* TO 20]';
 
   // Define connection to SolR for ADC and results of the query
@@ -362,6 +362,8 @@ return
     <div id="popup-content"></div>
   </div>
   <div id="map-cvl" class="map-cvl">
+     <input type="radio" name="cvl-projection" value="EPSG:4326">WGS:84</input>
+     <input type="radio" name="cvl-projection" value="EPSG:32661">UPS North</input>
      <script type="text/javascript" src="/$mpath/js/cvl_visualization.js"></script>
   </div>
 

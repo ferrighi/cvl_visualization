@@ -1,21 +1,21 @@
 //initialize projection
 var prj = 'EPSG:4326';
-var defzoom = 4;
+var defzoom = 2;
 
 // two projections will be possible
 // 32661
 proj4.defs('EPSG:32661', '+proj=stere +lat_0=90 +lat_ts=90 +lon_0=0 +k=0.994 +x_0=2000000 +y_0=2000000 +datum=WGS84 +units=m +no_defs');
 ol.proj.proj4.register(proj4);
-var ext32661 = [-10e+06,-10e+06,10e+06,10e+06]; 
-var center32661 = [15,80]; 
+var ext32661 = [-4e+06,-3e+06,8e+06,8e+06];
+var center32661 = [15,70];
 var proj32661 = new ol.proj.Projection({
   code: 'EPSG:32661',
-  extent: [-20000000,-30000000,20000000,10000000]
+  extent: ext32661
 });
 
 // 4326
-var ext4326 = [-180.0000, -90.0000, 180.0000, 90.0000]; 
-var center4326 = [15,70]; 
+var ext4326 = [-80.0000, 0.0000, 80.0000, 100.0000];
+var center4326 = [15,80];
 var proj4326 = new ol.proj.Projection({
   code: 'EPSG:4326',
   extent: ext4326
@@ -23,7 +23,8 @@ var proj4326 = new ol.proj.Projection({
 
 projObjectforCode = {
    'EPSG:4326': {extent: ext4326, center: center4326, projection: proj4326},
-   'EPSG:32661': {extent: ext32661, center: center32661, projection: proj32661}};
+   'EPSG:32661': {extent: ext32661, center: center32661, projection: proj32661}
+   };
 
 // Import variables from php: array(address, id, layers)
 var extracted_info = Drupal.settings.extracted_info;
@@ -33,29 +34,33 @@ var pins = Drupal.settings.pins;
 var site_name = Drupal.settings.site_name;
 //console.log(extracted_info);
 
+var chp = document.getElementsByName('cvl-projection');
 
 //document.getElementsByClassName("datasets")[0].style.display = 'none';
+for (var i = chp.length; i--;) {
+   chp[i].onchange = function change_projection() {
+      var prj = this.value;
+      map.getLayers().removeAt(2,layer['pins']);
+      map.getLayers().removeAt(1,layer['polygons']);
+      map.getLayers().removeAt(0,layer['baseS']);
+      map.getLayers().insertAt(0,layer['baseN']);
+      map.setView(new ol.View({
+                    zoom: defzoom,
+                    minZoom: 1,
+                    maxZoom: 12,
+                    extent: projObjectforCode[prj].extent,
+                    center: ol.proj.transform(projObjectforCode[prj].center, 'EPSG:4326', projObjectforCode[prj].projection),
+                    projection: projObjectforCode[prj].projection,}))
 
-var ch = document.getElementsByName('projection');
-
-for (var i = ch.length; i--;) {
-    ch[i].onchange = function change_projection() {
-        var prj = this.value;
-    map.setView(new ol.View({
-                  zoom: defzoom,
-                  minZoom: 1,
-                  maxZoom: 12,
-                  center: projObjectforCode[prj].center,
-                  projection: projObjectforCode[prj].projection,}))
-    layer['base'].getSource().refresh();
-    //clear pins and polygons
-    map.getLayers().getArray()[1].getSource().clear(true);
-    if (pins) {
-      map.getLayers().getArray()[2].getSource().clear(true);
-    }
-    //rebuild vector source
-    buildFeatures(projObjectforCode[prj].projection);
-    }
+      layer['baseN'].getSource().refresh();
+      //clear pins and polygons
+      if(map.getLayers().getArray().length !== 1) {
+         map.getLayers().getArray()[1].getSource().clear(true);
+         map.getLayers().getArray()[2].getSource().clear(true);
+      }
+      //rebuild vector source
+      buildFeatures(projObjectforCode[prj].projection);
+      }
 }
 
 //in nbs s1-ew
@@ -137,11 +142,11 @@ var iconStyleP2 = new ol.style.Style({
 // Define all layers
 var layer = {};
 
-// Base layer WMS
-layer['base']  = new ol.layer.Tile({
+// Base layer WMS north
+layer['baseN']  = new ol.layer.Tile({
    type: 'base',
-   title: 'base',
-   source: new ol.source.TileWMS({ 
+   title: 'bgN',
+   source: new ol.source.TileWMS({
        url: 'https://public-wms.met.no/backgroundmaps/northpole.map',
        params: {'LAYERS': 'world', 'TRANSPARENT':'false', 'VERSION':'1.1.1','FORMAT':'image/png'},
        crossOrigin: 'anonymous'
@@ -150,7 +155,7 @@ layer['base']  = new ol.layer.Tile({
 
 var map = new ol.Map({
    target: 'map-cvl',
-   layers: [ layer['base']
+   layers: [ layer['baseN']
            ],
    view: new ol.View({
                  zoom: defzoom, 
@@ -182,7 +187,9 @@ function id_tooltip_h(){
       tlphov.style.display = 'inline-block';
       tlphov.innerHTML = '';
       for(var id in feature_ids){
-        overlayh.setPosition([coordinate[0] + coordinate[0]*2/100, coordinate[1] -  coordinate[1]*2/100]);
+        overlayh.setPosition(coordinate);
+        overlayh.setPositioning('top-left');
+        overlayh.setOffset([0,20]);
         tlphov.innerHTML += feature_ids[id].title+'<br>';
       }
     }
@@ -470,6 +477,8 @@ if (pins) {
 //initialize features
 buildFeatures(prj);
 
+
+
 // display clickable ID in tooltip
 id_tooltip()
 id_tooltip_h()
@@ -521,19 +530,4 @@ function plot_ts(url_o) {
       document.getElementById('tsplot').innerHTML = '';
   })
 }
-
-
-//function addRow() {
-//     var table = document.getElementById("list");
-//     var one = JSON.parse(localStorage["createEvent"]);
-//     for (var i = 0; i < one.length; i++) {
-//         var this_tr = document.createElement("tr");
-//         for (var j=0; j < one[i].length; j++) {
-//             var this_td = document.createElement("td");
-//             var text = document.createTextNode(one[i][j]);
-//             this_td.appendChild(text);
-//             this_tr.appendChild(this_td);
-//         }
-//         table.appendChild(this_tr);
-//}
 
