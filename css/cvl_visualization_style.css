@@ -11,6 +11,10 @@
   top: unset !important;
 }
 
+.block-cvl-visualization .ol-viewport {
+  height: 400px !important;
+}
+
 .block-cvl-visualization .panel {
   margin-bottom: 0em;
 }
