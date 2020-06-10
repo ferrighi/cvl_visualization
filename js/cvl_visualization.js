@@ -353,7 +353,7 @@ onclick="fetch_ts_variables('${feature_ids[id].url_o}', 'md-ts-${id}');">Interac
      <option>Choose a variable</option>
 </select>
 
-<div id="tsplot"></div>
+<div name="tsplot" id="tsplot-${id}"></div>
 
 </div>
 `;
@@ -530,6 +530,7 @@ function plot_ts(url_o, md_ts_id) {
       return response.json();
   })
   .then(function (item) {
+      item.target_id = document.getElementById(md_ts_id).children['tsplot'].id;
       Bokeh.embed.embed_item(item);
       document.getElementById(md_ts_id).children['tsplot'].innerHTML = '';
   })
