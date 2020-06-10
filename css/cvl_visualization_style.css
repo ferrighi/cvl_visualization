@@ -71,6 +71,7 @@
   background: white;
   width:100%;
   box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2), 0 6px 20px 0 rgba(0,0,0,0.19);
+  overflow-wrap: anywhere;
 }
 
 .block-cvl-visualization #popup{
@@ -78,7 +79,7 @@
   max-width: 30em; 
   height: 30em; 
   background: white; 
-  overflow: auto;
+  overflow-wrap: anywhere;
 }
 
 

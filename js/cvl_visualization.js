@@ -182,7 +182,8 @@ function id_tooltip_h(){
     var coordinate = evt.coordinate;
     var feature_ids = {};
     map.forEachFeatureAtPixel(evt.pixel, function(feature, layer) {
-      feature_ids[feature.get('id')] = {title: feature.get('title')};
+      feature_ids[feature.get('id')] = {title: feature.get('title'),
+                                        id: feature.get('id')};
     });
     if(feature_ids.length !== 0) {
       tlphov.style.display = 'inline-block';
@@ -191,7 +192,11 @@ function id_tooltip_h(){
         overlayh.setPosition(coordinate);
         overlayh.setPositioning('top-left');
         overlayh.setOffset([0,20]);
-        tlphov.innerHTML += feature_ids[id].title+'<br>';
+        if ((feature_ids[id].id).includes('S1') || feature_ids[id].id.includes('S2')){
+           tlphov.innerHTML += feature_ids[id].id+'<br>';
+        }else{
+           tlphov.innerHTML += feature_ids[id].title+'<br>';
+        }
       }
     }
   });
@@ -265,9 +270,10 @@ function id_tooltip(){
      tooltip.innerHTML = '';
      content.innerHTML = '';
      for(var id in feature_ids){
+console.log(feature_ids[id].core);
 
 var markup = `
-<a target="_blank" href="${feature_ids[id].url_lp}" style="width: 55%; display: inline-block;"><strong>${feature_ids[id].title}</strong></a>
+<a target="_blank" href="${feature_ids[id].url_lp}" style="width: 55%; display: inline-block;"><strong>${(feature_ids[id].id).includes('S1') || (feature_ids[id].id).includes('S2') ? feature_ids[id].id : feature_ids[id].title}</strong></a>
 <button type="button" class="cvl-button" data-toggle="collapse" data-target="#md-more-${id}">Metadata</button> 
 <button type="button" class="cvl-button"><a target="_blank" href="${(feature_ids[id].url_h) !='' ? feature_ids[id].url_h : feature_ids[id].url_lp}">Direct Download</a></button>
 <button type="button" style="display: ${(feature_ids[id].has_ts == 'true') ? 'unset': 'none'};" class="cvl-button" data-toggle="collapse" data-target="#md-ts-${id}" 
@@ -355,7 +361,11 @@ onclick="fetch_ts_variables('${feature_ids[id].url_o}', 'md-ts-${id}');">Interac
 
         if(true){
            if(feature_ids[id].thumb !==''){
-        content.innerHTML += feature_ids[id].title+"<a target=\"_blank\" href=\""+site_name+"/metsis/map/wms?dataset="+feature_ids[id].id+"&solr_core="+feature_ids[id].core+"\"><img class=\"cvl-thumb\" style=\"padding: 0.8em;\"src=\""+feature_ids[id].thumb+"\"></a></br>";
+              if((feature_ids[id].id).includes('S1') || feature_ids[id].id.includes('S2')){
+                 content.innerHTML += feature_ids[id].id+"<a target=\"_blank\" href=\""+site_name+"/metsis/map/wms?dataset="+feature_ids[id].id+"&solr_core="+feature_ids[id].core+"\"><img class=\"cvl-thumb\" style=\"padding: 0.8em;\"src=\""+feature_ids[id].thumb+"\"></a></br>";
+              }else{
+                 content.innerHTML += feature_ids[id].title+"<a target=\"_blank\" href=\""+site_name+"/metsis/map/wms?dataset="+feature_ids[id].id+"&solr_core="+feature_ids[id].core+"\"><img class=\"cvl-thumb\" style=\"padding: 0.8em;\"src=\""+feature_ids[id].thumb+"\"></a></br>";
+              }
            }
         tooltip.innerHTML += markup;  
         }
@@ -370,6 +380,7 @@ function buildFeatures(prj) {
 
 
 var iconFeaturesPol=[];
+var iconFeaturesPin=[];
 for(var i12=0; i12 <= extracted_info.length-1; i12++){
 if ((extracted_info[i12][2][0] !== extracted_info[i12][2][1]) || (extracted_info[i12][2][2] !== extracted_info[i12][2][3])) {
   box_tl = ol.proj.transform([extracted_info[i12][2][3], extracted_info[i12][2][0]], 'EPSG:4326', prj);
@@ -400,31 +411,11 @@ if ((extracted_info[i12][2][0] !== extracted_info[i12][2][1]) || (extracted_info
   iconFeaturesPol.push(iconFeaturePol);
 
   if ((extracted_info[i12][1]).includes("S1") || (extracted_info[i12][1]).includes("S2")) {
-     iconFeaturePol.setStyle(iconStyleGr);
+     iconFeaturePol.setStyle(iconStyleR);
   }else{
      iconFeaturePol.setStyle(iconStyleBl);
   }
-}
-}
-
-//create a vector source with all points
-var vectorSourcePol = new ol.source.Vector({
-  features: iconFeaturesPol
-});
-
-//create a vector layer with all points from the vector source and pins
-var vectorLayerPol = new ol.layer.Vector({
-  source: vectorSourcePol,
-  //style: iconStyle,
-});
-
-map.addLayer(vectorLayerPol);
-
-
-//all points
-if (pins) {
-  var iconFeaturesPin=[];
-  for(var i12=0; i12 <= extracted_info.length-1; i12++){
+}else{
     geom = new ol.geom.Point(ol.proj.transform([extracted_info[i12][3][1], extracted_info[i12][3][0]], 'EPSG:4326', prj));
     var iconFeaturePin = new ol.Feature({
 	url: [extracted_info[i12][0][0], extracted_info[i12][0][1], extracted_info[i12][0][2], extracted_info[i12][0][3]],
@@ -456,7 +447,22 @@ if (pins) {
     }else{
        iconFeaturePin.setStyle(iconStyleP2);
     }
-  }
+}
+
+//end loop in length
+}
+
+//create a vector source with all points
+var vectorSourcePol = new ol.source.Vector({
+  features: iconFeaturesPol
+});
+
+//create a vector layer with all points from the vector source and pins
+var vectorLayerPol = new ol.layer.Vector({
+  source: vectorSourcePol,
+  //style: iconStyle,
+});
+
 //create a vector source with all points
   var vectorSourcePin = new ol.source.Vector({
     features: iconFeaturesPin
@@ -466,15 +472,15 @@ if (pins) {
     source: vectorSourcePin,
     //style: iconStyle,
   });
-  map.addLayer(vectorLayerPin);
-}
+map.addLayer(vectorLayerPol);
+map.addLayer(vectorLayerPin);
 
 }
 
 //initialize features
 buildFeatures(prj);
 
-map.getView().fit(map.getLayers().getArray()[2].getSource().getExtent());
+map.getView().fit(map.getLayers().getArray()[1].getSource().getExtent());
 map.getView().setZoom(map.getView().getZoom() - 1);
 
 
