@@ -362,9 +362,9 @@ onclick="fetch_ts_variables('${feature_ids[id].url_o}', 'md-ts-${id}');">Interac
         if(true){
            if(feature_ids[id].thumb !==''){
               if((feature_ids[id].id).includes('S1') || feature_ids[id].id.includes('S2')){
-                 content.innerHTML += feature_ids[id].id+"<a target=\"_blank\" href=\""+site_name+"/metsis/map/wms?dataset="+feature_ids[id].id+"&solr_core="+feature_ids[id].core+"\"><img class=\"cvl-thumb\" style=\"padding: 0.8em;\"src=\""+feature_ids[id].thumb+"\"></a></br>";
+                 content.innerHTML += feature_ids[id].id+"<a href=\""+site_name+"/metsis/map/wms?dataset="+feature_ids[id].id+"&solr_core="+feature_ids[id].core+"\"><img class=\"cvl-thumb\" style=\"padding: 0.8em;\"src=\""+feature_ids[id].thumb+"\"></a></br>";
               }else{
-                 content.innerHTML += feature_ids[id].title+"<a target=\"_blank\" href=\""+site_name+"/metsis/map/wms?dataset="+feature_ids[id].id+"&solr_core="+feature_ids[id].core+"\"><img class=\"cvl-thumb\" style=\"padding: 0.8em;\"src=\""+feature_ids[id].thumb+"\"></a></br>";
+                 content.innerHTML += feature_ids[id].title+"<a href=\""+site_name+"/metsis/map/wms?dataset="+feature_ids[id].id+"&solr_core="+feature_ids[id].core+"\"><img class=\"cvl-thumb\" style=\"padding: 0.8em;\"src=\""+feature_ids[id].thumb+"\"></a></br>";
               }
            }
         tooltip.innerHTML += markup;  

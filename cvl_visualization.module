@@ -149,7 +149,7 @@ function cvl_visualization_main_content(){
   //  $query_nbs .= ($query_nbs == '') ? 'mmd_metadata_identifier:"' . $value[0] . '"': ' OR mmd_metadata_identifier:"' . $value[0] . '"';
   //}
 
-  $day = (new DateTime())->modify('-1 day')->format('Y-m-d\TH:i:s\Z');
+  $day = (new DateTime())->modify('-2 day')->format('Y-m-d\TH:i:s\Z');
   $query_nbs = 'mmd_temporal_extent_start_date:['.$day.' TO *] AND mmd_cloud_cover_value:[* TO 20]';
 
   // Define connection to SolR for ADC and results of the query
