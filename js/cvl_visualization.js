@@ -270,7 +270,6 @@ function id_tooltip(){
      tooltip.innerHTML = '';
      content.innerHTML = '';
      for(var id in feature_ids){
-console.log(feature_ids[id].core);
 
 var markup = `
 <a target="_blank" href="${feature_ids[id].url_lp}" style="width: 55%; display: inline-block;"><strong>${(feature_ids[id].id).includes('S1') || (feature_ids[id].id).includes('S2') ? feature_ids[id].id : feature_ids[id].title}</strong></a>
