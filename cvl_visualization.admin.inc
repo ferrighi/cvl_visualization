@@ -16,6 +16,7 @@ function cvl_visualization_admin() {
     '#title' => t('Enter metadata prefix'),
     '#default_value' => variable_get('md_prefix', ''),
     '#description' => t("Enter metadata prefix, as for example 'mmd_'"),
+    '#required' => TRUE,
   );
 
   $form['solr_ip'] = array(
@@ -23,6 +24,7 @@ function cvl_visualization_admin() {
     '#title' => t('Enter SolR ip'),
     '#default_value' => variable_get('solr_ip', ''),
     '#description' => t("IP of SolR server to be queried"),
+    '#required' => TRUE,
   );
 
   $form['solr_port'] = array(
@@ -30,6 +32,7 @@ function cvl_visualization_admin() {
     '#title' => t('Enter SolR port'),
     '#default_value' => variable_get('solr_port', ''),
     '#description' => t("Port of SolR server to be queried"),
+    '#required' => TRUE,
   );
 
   $form['ts_ip'] = array(
@@ -37,6 +40,7 @@ function cvl_visualization_admin() {
     '#title' => t('Enter TS service'),
     '#default_value' => variable_get('ts_ip', ''),
     '#description' => t("Name of the time series service, as ncapi.adc-ncplot.met.no"),
+    '#required' => TRUE,
   );
 
   return system_settings_form($form);
