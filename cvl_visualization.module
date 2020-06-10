@@ -362,8 +362,8 @@ return
     <div id="popup-content"></div>
   </div>
   <div id="map-cvl" class="map-cvl">
-     <input type="radio" name="cvl-projection" value="EPSG:4326">WGS:84</input>
-     <input type="radio" name="cvl-projection" value="EPSG:32661">UPS North</input>
+     <input type="radio" id="4326" name="cvl-projection" value="EPSG:4326">WGS:84</input>
+     <input type="radio" id="32661" name="cvl-projection" value="EPSG:32661">UPS North</input>
      <script type="text/javascript" src="/$mpath/js/cvl_visualization.js"></script>
   </div>
 

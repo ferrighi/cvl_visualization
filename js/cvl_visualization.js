@@ -7,14 +7,14 @@ var defzoom = 2;
 proj4.defs('EPSG:32661', '+proj=stere +lat_0=90 +lat_ts=90 +lon_0=0 +k=0.994 +x_0=2000000 +y_0=2000000 +datum=WGS84 +units=m +no_defs');
 ol.proj.proj4.register(proj4);
 var ext32661 = [-4e+06,-3e+06,8e+06,8e+06];
-var center32661 = [15,70];
+var center32661 = [15,60];
 var proj32661 = new ol.proj.Projection({
   code: 'EPSG:32661',
   extent: ext32661
 });
 
 // 4326
-var ext4326 = [-80.0000, 0.0000, 80.0000, 100.0000];
+var ext4326 = [-180.0000, 0.0000, 180.0000, 100.0000];
 var center4326 = [15,80];
 var proj4326 = new ol.proj.Projection({
   code: 'EPSG:4326',
@@ -32,9 +32,10 @@ var path = Drupal.settings.path;
 var ts_ip = Drupal.settings.ts_ip;
 var pins = Drupal.settings.pins;
 var site_name = Drupal.settings.site_name;
-//console.log(extracted_info);
 
 var chp = document.getElementsByName('cvl-projection');
+
+document.getElementById('4326').checked = true;
 
 //document.getElementsByClassName("datasets")[0].style.display = 'none';
 for (var i = chp.length; i--;) {
@@ -181,7 +182,6 @@ function id_tooltip_h(){
     var coordinate = evt.coordinate;
     var feature_ids = {};
     map.forEachFeatureAtPixel(evt.pixel, function(feature, layer) {
-      //console.log(feature);
       feature_ids[feature.get('id')] = {title: feature.get('title')};
     });
     if(feature_ids.length !== 0) {
@@ -266,21 +266,20 @@ function id_tooltip(){
      content.innerHTML = '';
      for(var id in feature_ids){
 
-
-
 var markup = `
 <a target="_blank" href="${feature_ids[id].url_lp}" style="width: 55%; display: inline-block;"><strong>${feature_ids[id].title}</strong></a>
 <button type="button" class="cvl-button" data-toggle="collapse" data-target="#md-more-${id}">Metadata</button> 
 <button type="button" class="cvl-button"><a target="_blank" href="${(feature_ids[id].url_h) !='' ? feature_ids[id].url_h : feature_ids[id].url_lp}">Direct Download</a></button>
 <button type="button" style="display: ${(feature_ids[id].has_ts == 'true') ? 'unset': 'none'};" class="cvl-button" data-toggle="collapse" data-target="#md-ts-${id}" 
 onclick="fetch_ts_variables('${feature_ids[id].url_o}', 'md-ts-${id}');">Interactive Plotting</button>
+<a style="display: ${(feature_ids[id].thumb != '') ? 'inline-block': 'none'};" class="cvl-button" href="/metsis/map/wms?dataset=${feature_ids[id].id}&solr_core=${feature_ids[id].core}">Visualize</a>
 
 <div style="height: 0.4em; background-color: white;"></div>
 
 <div id="md-more-${id}" style="background-color:white; overflow-y: hidden; height: 0px" class="collapse">
 <table class="cvl-table">
   <tr style="border: none;">
-  <td style="width:20%; border: none;"><img class="cvl-thumb" src="${feature_ids[id].thumb}"></td>
+  <td ${(feature_ids[id].thumb != '') ? '<td style="min-width:25%;"><a href="/metsis/map/wms?dataset='+feature_ids[id].id+'&solr_core='+feature_ids[id].core+'"}><img class="cvl-thumn" src="'+feature_ids[id].thumb+'"></img></a></td>' : ''}
   <td style="border: none;">
   <strong>Title: </strong>${feature_ids[id].title}<br>
   <strong>Abstract: </strong>${feature_ids[id].abs}<br>
@@ -357,7 +356,6 @@ onclick="fetch_ts_variables('${feature_ids[id].url_o}', 'md-ts-${id}');">Interac
         if(true){
            if(feature_ids[id].thumb !==''){
         content.innerHTML += feature_ids[id].title+"<a target=\"_blank\" href=\""+site_name+"/metsis/map/wms?dataset="+feature_ids[id].id+"&solr_core="+feature_ids[id].core+"\"><img class=\"cvl-thumb\" style=\"padding: 0.8em;\"src=\""+feature_ids[id].thumb+"\"></a></br>";
-        //content.innerHTML += feature_ids[id].title+"<img class=\"cvl-thumb\" style=\"padding: 0.8em;\"src=\""+feature_ids[id].thumb+"\"></a></br>";
            }
         tooltip.innerHTML += markup;  
         }
@@ -459,12 +457,10 @@ if (pins) {
        iconFeaturePin.setStyle(iconStyleP2);
     }
   }
-
 //create a vector source with all points
   var vectorSourcePin = new ol.source.Vector({
     features: iconFeaturesPin
   });
-
 //create a vector layer with all points from the vector source and pins
   var vectorLayerPin = new ol.layer.Vector({
     source: vectorSourcePin,
@@ -478,6 +474,8 @@ if (pins) {
 //initialize features
 buildFeatures(prj);
 
+map.getView().fit(map.getLayers().getArray()[2].getSource().getExtent());
+map.getView().setZoom(map.getView().getZoom() - 1);
 
 
 // display clickable ID in tooltip

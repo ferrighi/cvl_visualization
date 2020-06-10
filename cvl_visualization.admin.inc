@@ -33,10 +33,10 @@ function cvl_visualization_admin() {
   );
 
   $form['ts_ip'] = array(
-    '#type' => 'password',
-    '#title' => t('Enter TS service IP and PORT'),
+    '#type' => 'textfield',
+    '#title' => t('Enter TS service'),
     '#default_value' => variable_get('ts_ip', ''),
-    '#description' => t("IP:PORT of the time series service"),
+    '#description' => t("Name of the time series service, as ncapi.adc-ncplot.met.no"),
   );
 
   return system_settings_form($form);
