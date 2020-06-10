@@ -349,7 +349,7 @@ onclick="fetch_ts_variables('${feature_ids[id].url_o}', 'md-ts-${id}');">Interac
 </div>
 
 <div id="md-ts-${id}" style="background-color:white; overflow-y: hidden; height: 0px" class="collapse">
-<select name="var_list" id="var_list" onchange="plot_ts('${feature_ids[id].url_o}');">
+<select name="var_list" onchange="plot_ts('${feature_ids[id].url_o}','md-ts-${id}');">
      <option>Choose a variable</option>
 </select>
 
@@ -507,7 +507,7 @@ function fetch_ts_variables(url_o, md_ts_id) {
   .then(response => response.json())
   .then(data => {
     //clear options
-    var opts = document.getElementById("var_list");
+    var opts = document.getElementById(md_ts_id).children['var_list'];
     var length = opts.options.length;
     for (i = length-1; i > 0; i--) {
        select.options[i] = null;
@@ -521,17 +521,17 @@ function fetch_ts_variables(url_o, md_ts_id) {
   });
 }
 
-function plot_ts(url_o) {
+function plot_ts(url_o, md_ts_id) {
   let loader =  '<img id="ts-plot-loader" src="/'+path+'/icons/loader.gif">';
-  document.getElementById('tsplot').innerHTML = loader;
-  var variable = document.getElementById("var_list").value;
+  document.getElementById(md_ts_id).children['tsplot'].innerHTML = loader;
+  var variable = document.getElementById(md_ts_id).children['var_list'].value;
   fetch('https://'+ts_ip+'/ncplot/plot?get=plot&resource_url='+url_o+'&variable='+variable)
   .then(function (response) {
       return response.json();
   })
   .then(function (item) {
       Bokeh.embed.embed_item(item);
-      document.getElementById('tsplot').innerHTML = '';
+      document.getElementById(md_ts_id).children['tsplot'].innerHTML = '';
   })
 }
 
