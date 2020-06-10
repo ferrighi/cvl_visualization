@@ -510,7 +510,7 @@ function fetch_ts_variables(url_o, md_ts_id) {
     var opts = document.getElementById(md_ts_id).children['var_list'];
     var length = opts.options.length;
     for (i = length-1; i > 0; i--) {
-       select.options[i] = null;
+       opts.options[i] = null;
     }
     for (const variable of data.y_axis) {
       var el = document.createElement("option");
