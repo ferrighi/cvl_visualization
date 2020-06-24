@@ -63,7 +63,7 @@ function cvl_visualization_main_content(){
 
   drupal_add_css($mpath . '/css/cvl_visualization_style.css');
   drupal_add_css($ol6_path . '/css/ol.css');
-  drupal_add_css($ol6_path . '/apidoc/styles/bootstrap.min.css');
+  //drupal_add_css($ol6_path . '/apidoc/styles/bootstrap.min.css');
 
 
   drupal_add_js($ol6_path . '/build/ol.js');
