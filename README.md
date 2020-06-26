@@ -11,6 +11,6 @@ This is a Drupal 7 custom module to visualize selected products on a OL6 map.
 
 
 ## Dependencies
-Openlayers5 (https://github.com/openlayers/openlayers/releases/tag/v6.3.1) should be downloaded and installed in the libraries folder under the name "openlayers6"
+Openlayers6 (https://github.com/openlayers/openlayers/releases/tag/v6.3.1) should be downloaded and installed in the libraries folder under the name "openlayers6"
 jquery_update should be installed
 
