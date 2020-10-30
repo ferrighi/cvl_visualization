@@ -1,0 +1,13 @@
+cvl_visualization.admin_config_form:
+  title: 'CVL Visualization Configuration'
+  description: 'Configure CVL Visualization'
+  route_name: cvl_visualization.admin_config_form
+  parent: metno.group.admin
+  weight: 99
+
+metno.group.admin:
+  title: 'METNO'
+  route_name: system.admin_config_metsis
+  parent: system.admin_config
+  description: 'METNO Configuration'
+  weight: -999

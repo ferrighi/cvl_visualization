@@ -1,6 +1,52 @@
+(function($, Drupal, drupalSettings) {
+  Drupal.behaviors.cvlVisualizationBlock = {
+    attach: function(context, drupalSettings) {
+      $('#map-cvl', context).once('cvlVisualizationBlock').each(function() {
 //initialize projection
 var prj = 'EPSG:4326';
 var defzoom = 2;
+
+$('.proj-wrapper').append(
+  $(document.createElement('input')).prop({
+    id: '4326',
+    name: 'cvl-projection',
+    value: 'EPSG:4326',
+    type: 'radio',
+    class: 'projections'
+  })
+).append(
+  $(document.createElement('label')).prop({
+    class: "proj-labels",
+    for: '4326'
+  }).html('WGS:84')
+);
+
+$('.proj-wrapper').append(
+  $(document.createElement('input')).prop({
+    id: '32661',
+    name: 'cvl-projection',
+    value: 'EPSG:32661',
+    type: 'radio',
+    class: 'projections'
+  })
+).append(
+  $(document.createElement('label')).prop({
+    class: "proj-labels",
+    for: '32661'
+  }).html('UPS North')
+);
+// Do some styling
+$('.proj-labels').css({
+"display": "inline-block",
+"font-weight": "normal",
+"padding-right": "10px",
+"vertical-align": "middle"
+});
+$('.projections').css({
+"padding-left": "10px",
+"padding-right": "0px",
+"vertical-align": "middle"
+});
 
 // two projections will be possible
 // 32661
@@ -21,26 +67,26 @@ var proj4326 = new ol.proj.Projection({
   extent: ext4326
 });
 
-projObjectforCode = {
+var projObjectforCode = {
    'EPSG:4326': {extent: ext4326, center: center4326, projection: proj4326},
    'EPSG:32661': {extent: ext32661, center: center32661, projection: proj32661}
    };
 
 // Import variables from php: array(address, id, layers)
-var extracted_info = Drupal.settings.extracted_info;
-var path = Drupal.settings.path;
-var ts_ip = Drupal.settings.ts_ip;
-var pins = Drupal.settings.pins;
-var site_name = Drupal.settings.site_name;
+var extracted_info = drupalSettings.cvl_visualization.extracted_info;
+var path = drupalSettings.cvl_visualization.path;
+var ts_ip = drupalSettings.cvl_visualization.ts_ip;
+var pins = drupalSettings.cvl_visualization.pins;
+var site_name = drupalSettings.cvl_visualization.site_name;
 
 var chp = document.getElementsByName('cvl-projection');
-
 document.getElementById('4326').checked = true;
 
 //document.getElementsByClassName("datasets")[0].style.display = 'none';
 for (var i = chp.length; i--;) {
    chp[i].onchange = function change_projection() {
       var prj = this.value;
+
       map.getLayers().removeAt(2,layer['pins']);
       map.getLayers().removeAt(1,layer['polygons']);
       map.getLayers().removeAt(0,layer['baseS']);
@@ -159,7 +205,7 @@ var map = new ol.Map({
    layers: [ layer['baseN']
            ],
    view: new ol.View({
-                 zoom: defzoom, 
+                 zoom: defzoom,
                  minZoom: 1,
                  maxZoom: 12,
 	         extent: ext4326,
@@ -232,12 +278,12 @@ function id_tooltip(){
       feature_ids[feature.get('id')] = {url_o: feature.get('url')[0],
                                         url_w: feature.get('url')[1],
                                         url_h: feature.get('url')[2],
-                                        url_od: feature.get('url')[3], 
-                                        id: feature.get('id'), 
-                                        extent: feature.get('extent'), 
-                                        latlon: feature.get('latlon'), 
-                                        title: feature.get('title'), 
-                                        abs:feature.get('abs'), 
+                                        url_od: feature.get('url')[3],
+                                        id: feature.get('id'),
+                                        extent: feature.get('extent'),
+                                        latlon: feature.get('latlon'),
+                                        title: feature.get('title'),
+                                        abs:feature.get('abs'),
                                         timeStart: feature.get('time')[0],
                                         timeEnd: feature.get('time')[1],
                                         thumb: feature.get('thumb'),
@@ -273,30 +319,30 @@ function id_tooltip(){
 
 var markup = `
 <a target="_blank" href="${feature_ids[id].url_lp}" style="width: 55%; display: inline-block;"><strong>${(feature_ids[id].id).includes('S1') || (feature_ids[id].id).includes('S2') ? feature_ids[id].id : feature_ids[id].title}</strong></a>
-<button type="button" class="cvl-button" data-toggle="collapse" data-target="#md-more-${id}">Metadata</button> 
+<button type="button" class="cvl-button" data-toggle="collapse" data-target="#md-more-${id}">Metadata</button>
 <button type="button" class="cvl-button"><a target="_blank" href="${(feature_ids[id].url_h) !='' ? feature_ids[id].url_h : feature_ids[id].url_lp}">Direct Download</a></button>
-<button type="button" style="display: ${(feature_ids[id].has_ts == 'true') ? 'unset': 'none'};" class="cvl-button" data-toggle="collapse" data-target="#md-ts-${id}" 
-onclick="fetch_ts_variables('${feature_ids[id].url_o}', 'md-ts-${id}');">Interactive Plotting</button>
+<button type="button" style="display: ${(feature_ids[id].has_ts == 'true') ? 'unset': 'none'};" class="cvl-button" data-toggle="collapse" data-target="#md-ts-${id}"
+onclick="fetch_ts_variables('${feature_ids[id].url_o}', 'md-ts-${id}', '${ts_ip}', '${path}');">Interactive Plotting</button>
 <a style="display: ${(feature_ids[id].thumb != '') ? 'inline-block': 'none'};" class="cvl-button" href="/metsis/map/wms?dataset=${feature_ids[id].id}&solr_core=${feature_ids[id].core}">Visualize</a>
 
 <div style="height: 0.4em; background-color: white;"></div>
 
 <div id="md-more-${id}" style="background-color:white; overflow-y: hidden; height: 0px" class="collapse">
-<table class="cvl-table">
+<table class="cvl-table w3-table-all">
   <tr style="border: none;">
   <td ${(feature_ids[id].thumb != '') ? '<td style="min-width:25%;"><a href="/metsis/map/wms?dataset='+feature_ids[id].id+'&solr_core='+feature_ids[id].core+'"}><img class="cvl-thumn" src="'+feature_ids[id].thumb+'"></img></a></td>' : ''}
   <td style="border: none;">
   <strong>Title: </strong>${feature_ids[id].title}<br>
   <strong>Abstract: </strong>${feature_ids[id].abs}<br>
-  <button data-parent="#cvl-acc-${id}" type="button" class="cvl-button" data-toggle="collapse" style="margin-top: 2em;" data-target="#md-full-${id}">Full Metadata</button> 
-  <button data-parent="#cvl-acc-${id}" type="button" class="cvl-button" data-toggle="collapse" style="margin-top: 2em;" data-target="#md-access-${id}">Data Access</button> 
+  <button data-parent="#cvl-acc-${id}" type="button" class="cvl-button" data-toggle="collapse" style="margin-top: 2em;" data-target="#md-full-${id}">Full Metadata</button>
+  <button data-parent="#cvl-acc-${id}" type="button" class="cvl-button" data-toggle="collapse" style="margin-top: 2em;" data-target="#md-access-${id}">Data Access</button>
   </td></tr>
 </table>
 
 <div id="cvl-acc-${id}">
 <div class="panel">
 <div id="md-full-${id}" style="background-color:white; overflow-y: hidden; height: 0px" class="collapse">
-<table class="cvl-table">
+<table class="cvl-table w3-table-all">
   <tr><td colspan="2" style="width:25%;"><strong>Title: </strong></td><td>${feature_ids[id].title}</td></tr>
   <tr><td colspan="2" style="width:25%;"><strong>ID: </strong></td><td>${feature_ids[id].id}</td></tr>
   <tr><td colspan="2" style="width:25%;"><strong>Abstract: </strong></td><td>${feature_ids[id].abs}</td></tr>
@@ -349,7 +395,7 @@ onclick="fetch_ts_variables('${feature_ids[id].url_o}', 'md-ts-${id}');">Interac
 </div>
 
 <div id="md-ts-${id}" style="background-color:white; overflow-y: hidden; height: 0px" class="collapse">
-<select name="var_list" onchange="plot_ts('${feature_ids[id].url_o}','md-ts-${id}');">
+<select name="var_list" onchange="plot_ts('${feature_ids[id].url_o}','md-ts-${id}', '${ts_ip}', '${path}');">
      <option>Choose a variable</option>
 </select>
 
@@ -366,7 +412,7 @@ onclick="fetch_ts_variables('${feature_ids[id].url_o}', 'md-ts-${id}');">Interac
                  content.innerHTML += feature_ids[id].title+"<a href=\""+site_name+"/metsis/map/wms?dataset="+feature_ids[id].id+"&solr_core="+feature_ids[id].core+"\"><img class=\"cvl-thumb\" style=\"padding: 0.8em;\"src=\""+feature_ids[id].thumb+"\"></a></br>";
               }
            }
-        tooltip.innerHTML += markup;  
+        tooltip.innerHTML += markup;
         }
      }
 
@@ -492,7 +538,7 @@ var mousePositionControl = new ol.control.MousePosition({
    coordinateFormat : function(co) {
       return ol.coordinate.format(co, template = 'lon: {x}, lat: {y}', 2);
    },
-   projection : 'EPSG:4326', 
+   projection : 'EPSG:4326',
 });
 map.addControl(mousePositionControl);
 
@@ -501,8 +547,13 @@ var zoomToExtentControl = new ol.control.ZoomToExtent({
 });
 map.addControl(zoomToExtentControl);
 
+});
 
-function fetch_ts_variables(url_o, md_ts_id) {
+},
+};
+})(jQuery, Drupal, drupalSettings);
+
+function fetch_ts_variables(url_o, md_ts_id,ts_ip, path) {
   fetch('https://'+ts_ip+'/ncplot/plot?get=param&resource_url='+url_o)
   .then(response => response.json())
   .then(data => {
@@ -521,7 +572,7 @@ function fetch_ts_variables(url_o, md_ts_id) {
   });
 }
 
-function plot_ts(url_o, md_ts_id) {
+function plot_ts(url_o, md_ts_id,ts_ip, path) {
   let loader =  '<img id="ts-plot-loader" src="/'+path+'/icons/loader.gif">';
   document.getElementById(md_ts_id).children['tsplot'].innerHTML = loader;
   var variable = document.getElementById(md_ts_id).children['var_list'].value;
@@ -535,4 +586,3 @@ function plot_ts(url_o, md_ts_id) {
       document.getElementById(md_ts_id).children['tsplot'].innerHTML = '';
   })
 }
-

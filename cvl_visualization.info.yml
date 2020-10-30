@@ -1,10 +1,7 @@
-name = CVL data visualization Module
-description = "Display selected products on a OL5 client"
-core = 7.x
-
-dependencies[] = libraries
-dependencies[] = jquery_update
-files[] = cvl_visualization.admin.inc
-
-;
-configure = admin/config/services/cvl_visualization
+name: 'CVL data visualization Module'
+description: 'Display selected products on a OL5 client'
+type: module
+core: 8.x
+version: 1.x
+package: METNO
+dependencies:

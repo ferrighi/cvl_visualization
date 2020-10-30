@@ -1,0 +1,18 @@
+cvl_visualization.admin_config_form:
+  path: '/admin/config/metno/cvl_visualization'
+  defaults:
+    _form: '\Drupal\cvl_visualization\Form\CvlVisualizationConfigurationForm'
+    _title: 'CVL Visualization Configuration'
+  requirements:
+    _permission: 'administer site configuration'
+  options:
+    _admin_route: TRUE
+
+system.admin_config_metno:
+  path: '/admin/config/metno'
+  defaults:
+    _controller: '\Drupal\system\Controller\SystemController::systemAdminMenuBlockPage'
+    _title: 'METNO'
+    description: 'METNO Specific configuraton'
+  requirements:
+    _permission: 'administer site configuration'

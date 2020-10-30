@@ -1,10 +1,10 @@
-.block-cvl-visualization .map-cvl {
+.block-cvl-visualization-block .map-cvl {
   width: 100%;
   margin: auto;
   box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2), 0 6px 20px 0 rgba(0,0,0,0.19);
 }
 
-.block-cvl-visualization .thumb-pop {
+.block-cvl-visualization-block .thumb-pop {
   position: absolute;
   left: 1em !important;
   bottom: 2em !important;
@@ -12,20 +12,20 @@
   transform: unset !important;
 }
 
-.block-cvl-visualization .ol-viewport {
+.block-cvl-visualization-block .ol-viewport {
   height: 500px !important;
 }
 
-.block-cvl-visualization .panel {
+.block-cvl-visualization-block .panel {
   margin-bottom: 0em;
 }
 
-.block-cvl-visualization .cvl-table tr td {
-  font-size: 14px; 
+.block-cvl-visualization-block .cvl-table tr td {
+  font-size: 14px;
   vertical-align: middle;
 }
 
-.block-cvl-visualization .cvl-button {
+.block-cvl-visualization-block .cvl-button {
   background-color: #fafafa;
   color: #333;
   display: inline-block;
@@ -40,32 +40,32 @@
   font-size: 14px;
 }
 
-.block-cvl-visualization .cvl-thumb {
+.block-cvl-visualization-block .cvl-thumb {
   border: 0.1em solid black;
   margin: 0.3em;
 }
 
-.block-cvl-visualization .ol-viewport {
+.block-cvl-visualization-block .ol-viewport {
   background-color: white;
 }
 
-.block-cvl-visualization .ol-mouse-position {
+.block-cvl-visualization-block .ol-mouse-position {
   top: 5%;
   left: 80%;
   font-size: 1.5em;
   font-weight: bold;
 }
 
-.block-cvl-visualization #tooltip {
-  margin-top: 1em; 
-  margin-bottom: 1em; 
-  background-color: rgba(0,0,0,0.2); 
-  font-size: 14px; 
+.block-cvl-visualization-block #tooltip {
+  margin-top: 1em;
+  margin-bottom: 1em;
+  background-color: rgba(0,0,0,0.2);
+  font-size: 14px;
   width:100%;
 }
 
-.block-cvl-visualization #tooltip-hov {
-  font-size: small; 
+.block-cvl-visualization-block #tooltip-hov {
+  font-size: small;
   padding: 0.2em;
   background: white;
   width:100%;
@@ -73,23 +73,22 @@
   overflow-wrap: anywhere;
 }
 
-.block-cvl-visualization #popup{
-  box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2), 0 6px 20px 0 rgba(0,0,0,0.19); 
-  max-width: 30em; 
-  height: 30em; 
-  background: white; 
+.block-cvl-visualization-block #popup{
+  box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2), 0 6px 20px 0 rgba(0,0,0,0.19);
+  max-width: 30em;
+  height: 30em;
+  background: white;
   overflow: auto;
   overflow-wrap: anywhere;
 }
 
 
-.block-cvl-visualization #popup-content {
+.block-cvl-visualization-block #popup-content {
   font-weight: bold;
   font-size: 14px;
 }
 
-.block-cvl-visualization #ts-plot-loader {
-  display: block; 
+.block-cvl-visualization-block #ts-plot-loader {
+  display: block;
   margin: auto;
 }
-
