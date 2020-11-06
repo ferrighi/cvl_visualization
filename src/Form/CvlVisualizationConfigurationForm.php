@@ -53,13 +53,6 @@ class CvlVisualizationConfigurationForm extends ConfigFormBase {
     '#description' => t("datasets identifier and core in the form 'id1|core1|true/false, id2|core2|true/false'"),
   );
 
-  $form['md_prefix'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Enter metadata prefix'),
-    '#default_value' => $config->get('md_prefix'),
-    '#description' => t("Enter metadata prefix, as for example 'mmd_'"),
-    '#required' => TRUE,
-  );
 
   $form['solr_ip'] = array(
     '#type' => 'password',
@@ -74,6 +67,14 @@ class CvlVisualizationConfigurationForm extends ConfigFormBase {
     '#title' => t('Enter SolR port'),
     '#default_value' => $config->get('solr_port'),
     '#description' => t("Port of SolR server to be queried"),
+    '#required' => TRUE,
+  );
+
+  $form['solr_core'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Enter solr core name'),
+    '#default_value' => $config->get('solr_core'),
+    '#description' => t("Enter name of solr core."),
     '#required' => TRUE,
   );
 
@@ -111,7 +112,7 @@ public function submitForm(array &$form, FormStateInterface $form_state) {
   $this->configFactory->getEditable('cvl_visualization.settings')
 
     ->set('datasets', $values['datasets'])
-    ->set('md_prefix', $values['md_prefix'])
+    ->set('solr_core', $values['solr_core'])
     ->set('solr_ip', $values['solr_ip'])
     ->set('solr_port', $values['solr_port'])
     ->set('ts_ip', $values['ts_ip'])

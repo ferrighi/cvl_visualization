@@ -3,6 +3,7 @@
 namespace Drupal\cvl_visualization;
 use Drupal\cvl_visualization\HeaderList_cvl;
 use GuzzleHttp\Exception\RequestException;
+use GuzzleHttp\Exception\Exception;
 
 //Currently supports POST requests only.
 
@@ -58,7 +59,7 @@ class HttpConnection_cvl {
 
         $params = self::serialize_params($params);
 
-
+          \Drupal::logger('cvl_visualization')->debug("HttpConnection request before params: " . "http://{$this->host}:{$this->port}{$path}?{$params} HTTP/1.0\r\n");
 
         $this->request = strtoupper($method) . " http://{$this->host}:{$this->port}{$path}?{$params} HTTP/1.0\r\n";
 
