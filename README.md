@@ -16,4 +16,3 @@ jquery_update should be installed
 
 ### TODO:
 * Switch to Solarium PHP insted of custom HttpConnection_cvl Class
-* Parse the response with respect to new MMD specification and Drupal 8 Solr schema.
