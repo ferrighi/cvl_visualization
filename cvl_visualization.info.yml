@@ -1,7 +1,7 @@
 name: 'CVL data visualization Module'
 description: 'Display selected products on a OL5 client'
 type: module
-core: 8.x
-version: 1.x
+core_version_requirement: ^8.8 || ^9
+version: 1.0.1
 package: METNO
 dependencies:
